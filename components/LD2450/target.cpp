@@ -12,19 +12,19 @@ namespace esphome::ld2450
     void Target::dump_config()
     {
         std::string name = name_ != nullptr ? name_ : "Unnamed Target";
-        ESP_LOGCONFIG(TAG, "Target: %s", name);
+        ESP_LOGCONFIG(TAG, "Target: %s", name.c_str());
+        ESP_LOGCONFIG(TAG, "  debug: %s", debug_ ? "True" : "False");
     }
 
     void Target::loop()
     {
-
         if (debug_)
         {
             if (millis() - last_debug_message_ > DEBUG_FREQUENCY)
             {
                 last_debug_message_ = millis();
                 std::string name = name_ != nullptr ? name_ : "Unnamed Target";
-                ESP_LOGD(TAG, "Target %s: x:%i; y:%i; speed:%i; res:%i;", name, x_, y_, speed_, resolution_);
+                ESP_LOGD(TAG, "Target %s: x:%i; y:%i; speed:%i; res:%i;", name.c_str(), x_, y_, speed_, resolution_);
             }
         }
     }
