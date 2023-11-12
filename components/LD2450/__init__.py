@@ -35,6 +35,7 @@ CONF_DEBUG = "debug"
 CONF_X_SENSOR = "x_position"
 CONF_Y_SENSOR = "y_position"
 CONF_SPEED_SENSOR = "speed"
+CONF_DISTANCE_RESOLUTION_SENSOR = "distance_resolution"
 UNIT_METER_PER_SECOND = "m/s"
 
 ld2450_ns = cg.esphome_ns.namespace("ld2450")
@@ -43,7 +44,7 @@ Target = ld2450_ns.class_("Target", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 
-POSITION_SENSOR_SCHEMA = cv.Schema(
+DISTANCE_SENSOR_SCHEMA = cv.Schema(
     sensor.sensor_schema(
         unit_of_measurement=UNIT_METER,
         accuracy_decimals=2,
@@ -88,9 +89,10 @@ TARGET_SCHEMA = cv.Schema(
                 cv.GenerateID(): cv.declare_id(Target),
                 cv.Optional(CONF_NAME): cv.string_strict,
                 cv.Optional(CONF_DEBUG, default=False): cv.boolean,
-                cv.Optional(CONF_X_SENSOR): POSITION_SENSOR_SCHEMA,
-                cv.Optional(CONF_Y_SENSOR): POSITION_SENSOR_SCHEMA,
+                cv.Optional(CONF_X_SENSOR): DISTANCE_SENSOR_SCHEMA,
+                cv.Optional(CONF_Y_SENSOR): DISTANCE_SENSOR_SCHEMA,
                 cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA,
+                cv.Optional(CONF_DISTANCE_RESOLUTION_SENSOR): DISTANCE_SENSOR_SCHEMA,
             }
         ),
     }
@@ -200,7 +202,12 @@ def target_to_code(config, user_index: int):
     cg.add(target.set_name(config[CONF_NAME]))
     cg.add(target.set_debugging(config[CONF_DEBUG]))
 
-    for SENSOR in [CONF_X_SENSOR, CONF_Y_SENSOR, CONF_SPEED_SENSOR]:
+    for SENSOR in [
+        CONF_X_SENSOR,
+        CONF_Y_SENSOR,
+        CONF_SPEED_SENSOR,
+        CONF_DISTANCE_RESOLUTION_SENSOR,
+    ]:
         if sensor_config := config.get(SENSOR):
             # Add Target name as prefix to sensor name
             sensor_config[CONF_NAME] = f"{config[CONF_NAME]} {sensor_config[CONF_NAME]}"
@@ -215,5 +222,7 @@ def target_to_code(config, user_index: int):
                 cg.add(target.set_y_position_sensor(sensor_var))
             elif SENSOR == CONF_SPEED_SENSOR:
                 cg.add(target.set_speed_sensor(sensor_var))
+            elif SENSOR == CONF_DISTANCE_RESOLUTION_SENSOR:
+                cg.add(target.set_distance_resolution_sensor(sensor_var))
 
     return target
