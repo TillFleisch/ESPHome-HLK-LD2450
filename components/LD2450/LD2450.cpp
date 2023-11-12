@@ -42,8 +42,15 @@ namespace esphome::ld2450
     void LD2450::dump_config()
     {
         ESP_LOGCONFIG(TAG, "LD2450 Hub: %s", name_);
+        ESP_LOGCONFIG(TAG, "  fast_off_detection: %s", fast_off_detection_ ? "True" : "False");
+        ESP_LOGCONFIG(TAG, "  flip_x_axis: %s", flip_x_axis_ ? "True" : "False");
+        ESP_LOGCONFIG(TAG, "  max_detection_distance: %i mm", max_detection_distance_);
+        ESP_LOGCONFIG(TAG, "  max_distance_margin: %i mm", max_distance_margin_);
 #ifdef USE_BINARY_SENSOR
         LOG_BINARY_SENSOR("  ", "OccupancyBinarySensor", occupancy_binary_sensor_);
+#endif
+#ifdef USE_NUMBER
+        LOG_NUMBER("  ", "MaxDistanceNumber", max_distance_number_);
 #endif
     }
 
@@ -102,6 +109,12 @@ namespace esphome::ld2450
             x = x * (flip_x_axis_ ? -1 : 1);
 
             targets_[i]->update_values(x, y, speed, distance_resolution);
+
+            // Filter targets further than max detection distance
+            if (y <= max_detection_distance_ || (targets_[i]->is_present() && y <= max_detection_distance_ + max_distance_margin_))
+                targets_[i]->update_values(x, y, speed, distance_resolution);
+            else if (y >= max_detection_distance_ + max_distance_margin_)
+                targets_[i]->clear();
         }
 
         bool occupied = false;
