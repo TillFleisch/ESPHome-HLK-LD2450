@@ -12,6 +12,7 @@ from esphome.const import (
     CONF_UNIT_OF_MEASUREMENT,
     UNIT_METER,
     UNIT_CENTIMETER,
+    UNIT_DEGREES,
     DEVICE_CLASS_OCCUPANCY,
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_SPEED,
@@ -36,7 +37,10 @@ CONF_X_SENSOR = "x_position"
 CONF_Y_SENSOR = "y_position"
 CONF_SPEED_SENSOR = "speed"
 CONF_DISTANCE_RESOLUTION_SENSOR = "distance_resolution"
+CONF_ANGLE_SENSOR = "angle"
+
 UNIT_METER_PER_SECOND = "m/s"
+ICON_ANGLE_ACUTE = "mdi:angle-acute"
 
 ld2450_ns = cg.esphome_ns.namespace("ld2450")
 LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
@@ -82,6 +86,24 @@ SPEED_SENSOR_SCHEMA = cv.Schema(
     )
 )
 
+DEGREE_SENSOR_SCHEMA = cv.Schema(
+    sensor.sensor_schema(
+        unit_of_measurement=UNIT_DEGREES,
+        accuracy_decimals=0,
+        state_class=STATE_CLASS_MEASUREMENT,
+        icon=ICON_ANGLE_ACUTE,
+    )
+    .extend(cv.polling_component_schema("1s"))
+    .extend(
+        {
+            cv.GenerateID(): cv.declare_id(PollingSensor),
+            cv.Optional(CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES): cv.All(
+                cv.one_of(UNIT_DEGREES),
+            ),
+        }
+    )
+)
+
 TARGET_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_TARGET): cv.Optional(
@@ -93,6 +115,7 @@ TARGET_SCHEMA = cv.Schema(
                 cv.Optional(CONF_Y_SENSOR): DISTANCE_SENSOR_SCHEMA,
                 cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA,
                 cv.Optional(CONF_DISTANCE_RESOLUTION_SENSOR): DISTANCE_SENSOR_SCHEMA,
+                cv.Optional(CONF_ANGLE_SENSOR): DEGREE_SENSOR_SCHEMA,
             }
         ),
     }
@@ -207,6 +230,7 @@ def target_to_code(config, user_index: int):
         CONF_Y_SENSOR,
         CONF_SPEED_SENSOR,
         CONF_DISTANCE_RESOLUTION_SENSOR,
+        CONF_ANGLE_SENSOR,
     ]:
         if sensor_config := config.get(SENSOR):
             # Add Target name as prefix to sensor name
@@ -224,5 +248,7 @@ def target_to_code(config, user_index: int):
                 cg.add(target.set_speed_sensor(sensor_var))
             elif SENSOR == CONF_DISTANCE_RESOLUTION_SENSOR:
                 cg.add(target.set_distance_resolution_sensor(sensor_var))
+            elif SENSOR == CONF_ANGLE_SENSOR:
+                cg.add(target.set_angle_sensor(sensor_var))
 
     return target

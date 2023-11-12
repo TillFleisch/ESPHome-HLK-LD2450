@@ -50,6 +50,11 @@ namespace esphome::ld2450
             speed_sensor_->set_value(present ? speed_ : NAN);
         if (distance_resolution_sensor_ != nullptr)
             distance_resolution_sensor_->set_value(present ? resolution_ : NAN);
+        if (angle_sensor_ != nullptr)
+        {
+            float angle = atan2(y, x) * (180 / M_PI) - 90;
+            angle_sensor_->set_value(present ? angle : NAN);
+        }
     }
 
     bool Target::is_present()

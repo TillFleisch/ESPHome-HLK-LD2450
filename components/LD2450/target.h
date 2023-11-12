@@ -80,6 +80,15 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Sets the angle sensor reference
+         * @param reference polling sensor reference
+         */
+        void set_angle_sensor(PollingSensor *angle_sensor)
+        {
+            angle_sensor_ = angle_sensor;
+        }
+
+        /**
          * @brief Updates the value in this target object
          * @param x The x coordinate of the target
          * @param y The y coordinate of the target
@@ -186,5 +195,8 @@ namespace esphome::ld2450
 
         /// @brief sensor reference of the distance resolution sensor
         PollingSensor *distance_resolution_sensor_ = nullptr;
+
+        /// @brief sensor reference of the angle sensor
+        PollingSensor *angle_sensor_ = nullptr;
     };
 }
