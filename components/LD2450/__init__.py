@@ -32,12 +32,31 @@ CONF_TARGETS = "targets"
 CONF_TARGET = "target"
 CONF_DEBUG = "debug"
 CONF_X_SENSOR = "x_position"
+CONF_Y_SENSOR = "y_position"
 
 ld2450_ns = cg.esphome_ns.namespace("ld2450")
 LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
 Target = ld2450_ns.class_("Target", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
+
+POSITION_SENSOR_SCHEMA = cv.Schema(
+    sensor.sensor_schema(
+        unit_of_measurement=UNIT_METER,
+        accuracy_decimals=2,
+        state_class=STATE_CLASS_MEASUREMENT,
+        device_class=DEVICE_CLASS_DISTANCE,
+    )
+    .extend(cv.polling_component_schema("1s"))
+    .extend(
+        {
+            cv.GenerateID(): cv.declare_id(PollingSensor),
+            cv.Optional(CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER): cv.All(
+                cv.one_of(UNIT_METER, UNIT_CENTIMETER),
+            ),
+        }
+    )
+)
 
 TARGET_SCHEMA = cv.Schema(
     {
@@ -46,23 +65,8 @@ TARGET_SCHEMA = cv.Schema(
                 cv.GenerateID(): cv.declare_id(Target),
                 cv.Optional(CONF_NAME): cv.string_strict,
                 cv.Optional(CONF_DEBUG, default=False): cv.boolean,
-                cv.Optional(CONF_X_SENSOR): sensor.sensor_schema(
-                    unit_of_measurement=UNIT_METER,
-                    accuracy_decimals=2,
-                    state_class=STATE_CLASS_MEASUREMENT,
-                    device_class=DEVICE_CLASS_DISTANCE,
-                )
-                .extend(cv.polling_component_schema("1s"))
-                .extend(
-                    {
-                        cv.GenerateID(): cv.declare_id(PollingSensor),
-                        cv.Optional(
-                            CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER
-                        ): cv.All(
-                            cv.one_of(UNIT_METER, UNIT_CENTIMETER),
-                        ),
-                    }
-                ),
+                cv.Optional(CONF_X_SENSOR): POSITION_SENSOR_SCHEMA,
+                cv.Optional(CONF_Y_SENSOR): POSITION_SENSOR_SCHEMA,
             }
         ),
     }
@@ -172,14 +176,18 @@ def target_to_code(config, user_index: int):
     cg.add(target.set_name(config[CONF_NAME]))
     cg.add(target.set_debugging(config[CONF_DEBUG]))
 
-    if x_sensor_config := config.get(CONF_X_SENSOR):
-        # Add Target name as prefix to sensor name
-        x_sensor_config[CONF_NAME] = f"{config[CONF_NAME]} {x_sensor_config[CONF_NAME]}"
+    for SENSOR in [CONF_X_SENSOR, CONF_Y_SENSOR]:
+        if sensor_config := config.get(SENSOR):
+            # Add Target name as prefix to sensor name
+            sensor_config[CONF_NAME] = f"{config[CONF_NAME]} {sensor_config[CONF_NAME]}"
 
-        x_sensor = cg.new_Pvariable(x_sensor_config[CONF_ID])
-        yield cg.register_component(x_sensor, x_sensor_config)
-        yield sensor.register_sensor(x_sensor, x_sensor_config)
+            sensor_var = cg.new_Pvariable(sensor_config[CONF_ID])
+            yield cg.register_component(sensor_var, sensor_config)
+            yield sensor.register_sensor(sensor_var, sensor_config)
 
-        cg.add(target.set_x_position_sensor(x_sensor))
+            if SENSOR == CONF_X_SENSOR:
+                cg.add(target.set_x_position_sensor(sensor_var))
+            elif SENSOR == CONF_Y_SENSOR:
+                cg.add(target.set_y_position_sensor(sensor_var))
 
     return target

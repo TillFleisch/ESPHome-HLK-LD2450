@@ -40,9 +40,12 @@ namespace esphome::ld2450
         speed_ = speed;
         resolution_ = resolution;
 
+        bool present = is_present();
         // Update sub sensors
         if (x_position_sensor_ != nullptr)
-            x_position_sensor_->set_value(x_);
+            x_position_sensor_->set_value(present ? x_ : NAN);
+        if (y_position_sensor_ != nullptr)
+            y_position_sensor_->set_value(present ? y_ : NAN);
     }
 
     bool Target::is_present()
