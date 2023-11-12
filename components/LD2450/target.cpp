@@ -14,6 +14,7 @@ namespace esphome::ld2450
         std::string name = name_ != nullptr ? name_ : "Unnamed Target";
         ESP_LOGCONFIG(TAG, "Target: %s", name.c_str());
         ESP_LOGCONFIG(TAG, "  debug: %s", debug_ ? "True" : "False");
+        LOG_SENSOR("  ", "X Position", x_position_sensor_);
     }
 
     void Target::loop()
@@ -38,6 +39,10 @@ namespace esphome::ld2450
         y_ = y;
         speed_ = speed;
         resolution_ = resolution;
+
+        // Update sub sensors
+        if (x_position_sensor_ != nullptr)
+            x_position_sensor_->set_value(x_);
     }
 
     bool Target::is_present()

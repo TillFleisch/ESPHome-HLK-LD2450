@@ -1,7 +1,7 @@
 from typing_extensions import Required
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart, binary_sensor, number
+from esphome.components import uart, binary_sensor, number, sensor
 from esphome.components.uart import UARTComponent
 from esphome.const import (
     CONF_ID,
@@ -11,31 +11,33 @@ from esphome.const import (
     CONF_INITIAL_VALUE,
     CONF_UNIT_OF_MEASUREMENT,
     UNIT_METER,
+    UNIT_CENTIMETER,
     DEVICE_CLASS_OCCUPANCY,
+    DEVICE_CLASS_DISTANCE,
+    STATE_CLASS_MEASUREMENT,
 )
 
-AUTO_LOAD = ["binary_sensor", "number"]
+AUTO_LOAD = ["binary_sensor", "number", "sensor"]
 
 DEPENDENCIES = ["uart"]
 
 UART_ID = "uart_id"
 
-CONF_HUB = "hub"
-
-CONF_TARGETS = "targets"
-CONF_TARGET = "target"
-CONF_DEBUG = "debug"
 CONF_USE_FAST_OFF = "fast_off_detection"
 CONF_FLIP_X_AXIS = "flip_x_axis"
 CONF_OCCUPANCY = "occupancy"
 CONF_MAX_DISTANCE = "max_detection_distance"
 CONF_MAX_DISTANCE_MARGIN = "max_distance_margin"
-
+CONF_TARGETS = "targets"
+CONF_TARGET = "target"
+CONF_DEBUG = "debug"
+CONF_X_SENSOR = "x_position"
 
 ld2450_ns = cg.esphome_ns.namespace("ld2450")
 LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
 Target = ld2450_ns.class_("Target", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
+PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 
 TARGET_SCHEMA = cv.Schema(
     {
@@ -44,6 +46,23 @@ TARGET_SCHEMA = cv.Schema(
                 cv.GenerateID(): cv.declare_id(Target),
                 cv.Optional(CONF_NAME): cv.string_strict,
                 cv.Optional(CONF_DEBUG, default=False): cv.boolean,
+                cv.Optional(CONF_X_SENSOR): sensor.sensor_schema(
+                    unit_of_measurement=UNIT_METER,
+                    accuracy_decimals=2,
+                    state_class=STATE_CLASS_MEASUREMENT,
+                    device_class=DEVICE_CLASS_DISTANCE,
+                )
+                .extend(cv.polling_component_schema("1s"))
+                .extend(
+                    {
+                        cv.GenerateID(): cv.declare_id(PollingSensor),
+                        cv.Optional(
+                            CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER
+                        ): cv.All(
+                            cv.one_of(UNIT_METER, UNIT_CENTIMETER),
+                        ),
+                    }
+                ),
             }
         ),
     }
@@ -105,8 +124,8 @@ def to_code(config):
     # process target list
     if targets_config := config.get(CONF_TARGETS):
         # Register target on controller
-        for target_config in targets_config:
-            target = yield target_to_code(target_config[CONF_TARGET])
+        for index, target_config in enumerate(targets_config):
+            target = yield target_to_code(target_config[CONF_TARGET], index)
             cg.add(var.register_target(target))
 
     # Add binary occupancy sensor if present
@@ -142,12 +161,25 @@ def to_code(config):
             cg.add(var.set_max_distance(max_distance_config))
 
 
-def target_to_code(config):
+def target_to_code(config, user_index: int):
     """Code generation for targets within the target list."""
     target = cg.new_Pvariable(config[CONF_ID])
     yield cg.register_component(target, config)
 
-    if CONF_NAME in config:
-        cg.add(target.set_name(config[CONF_NAME]))
+    # Generate name if not provided
+    if CONF_NAME not in config:
+        config[CONF_NAME] = f"Target {user_index + 1}"
+    cg.add(target.set_name(config[CONF_NAME]))
     cg.add(target.set_debugging(config[CONF_DEBUG]))
+
+    if x_sensor_config := config.get(CONF_X_SENSOR):
+        # Add Target name as prefix to sensor name
+        x_sensor_config[CONF_NAME] = f"{config[CONF_NAME]} {x_sensor_config[CONF_NAME]}"
+
+        x_sensor = cg.new_Pvariable(x_sensor_config[CONF_ID])
+        yield cg.register_component(x_sensor, x_sensor_config)
+        yield sensor.register_sensor(x_sensor, x_sensor_config)
+
+        cg.add(target.set_x_position_sensor(x_sensor))
+
     return target

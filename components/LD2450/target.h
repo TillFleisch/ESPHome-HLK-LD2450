@@ -2,6 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
+#include "polling_sensor.h"
 
 #define DEBUG_FREQUENCY 1000
 #define FAST_OFF_THRESHOLD 100
@@ -40,6 +41,15 @@ namespace esphome::ld2450
         void set_fast_off_detection(bool flag)
         {
             fast_off_detection_ = flag;
+        }
+
+        /**
+         * @brief Sets the x position sensor reference
+         * @param reference polling sensor reference
+         */
+        void set_x_position_sensor(PollingSensor *x_position_sensor)
+        {
+            x_position_sensor_ = x_position_sensor;
         }
 
         /**
@@ -137,5 +147,8 @@ namespace esphome::ld2450
 
         /// @brief time of the last value change
         long last_change_ = 0;
+
+        /// @brief sensor reference of the x position sensor
+        PollingSensor *x_position_sensor_ = nullptr;
     };
 }
