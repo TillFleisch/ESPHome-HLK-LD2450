@@ -36,6 +36,7 @@ CONF_DEBUG = "debug"
 CONF_X_SENSOR = "x_position"
 CONF_Y_SENSOR = "y_position"
 CONF_SPEED_SENSOR = "speed"
+CONF_DISTANCE_SENSOR = "distance"
 CONF_DISTANCE_RESOLUTION_SENSOR = "distance_resolution"
 CONF_ANGLE_SENSOR = "angle"
 
@@ -116,6 +117,7 @@ TARGET_SCHEMA = cv.Schema(
                 cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA,
                 cv.Optional(CONF_DISTANCE_RESOLUTION_SENSOR): DISTANCE_SENSOR_SCHEMA,
                 cv.Optional(CONF_ANGLE_SENSOR): DEGREE_SENSOR_SCHEMA,
+                cv.Optional(CONF_DISTANCE_SENSOR): DISTANCE_SENSOR_SCHEMA,
             }
         ),
     }
@@ -231,6 +233,7 @@ def target_to_code(config, user_index: int):
         CONF_SPEED_SENSOR,
         CONF_DISTANCE_RESOLUTION_SENSOR,
         CONF_ANGLE_SENSOR,
+        CONF_DISTANCE_SENSOR,
     ]:
         if sensor_config := config.get(SENSOR):
             # Add Target name as prefix to sensor name
@@ -250,5 +253,7 @@ def target_to_code(config, user_index: int):
                 cg.add(target.set_distance_resolution_sensor(sensor_var))
             elif SENSOR == CONF_ANGLE_SENSOR:
                 cg.add(target.set_angle_sensor(sensor_var))
+            elif SENSOR == CONF_DISTANCE_SENSOR:
+                cg.add(target.set_distance_sensor(sensor_var))
 
     return target
