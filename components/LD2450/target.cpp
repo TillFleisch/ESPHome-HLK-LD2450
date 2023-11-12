@@ -46,6 +46,8 @@ namespace esphome::ld2450
             x_position_sensor_->set_value(present ? x_ : NAN);
         if (y_position_sensor_ != nullptr)
             y_position_sensor_->set_value(present ? y_ : NAN);
+        if (speed_sensor_ != nullptr)
+            speed_sensor_->set_value(present ? speed_ : NAN);
     }
 
     bool Target::is_present()

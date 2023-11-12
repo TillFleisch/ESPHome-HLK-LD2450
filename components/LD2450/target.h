@@ -62,6 +62,15 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Sets the speed sensor reference
+         * @param reference polling sensor reference
+         */
+        void set_speed_sensor(PollingSensor *speed_sensor)
+        {
+            speed_sensor_ = speed_sensor;
+        }
+
+        /**
          * @brief Updates the value in this target object
          * @param x The x coordinate of the target
          * @param y The y coordinate of the target
@@ -162,5 +171,8 @@ namespace esphome::ld2450
 
         /// @brief sensor reference of the y position sensor
         PollingSensor *y_position_sensor_ = nullptr;
+
+        /// @brief sensor reference of the speed sensor
+        PollingSensor *speed_sensor_ = nullptr;
     };
 }

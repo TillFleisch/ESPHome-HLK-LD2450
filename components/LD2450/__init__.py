@@ -14,6 +14,7 @@ from esphome.const import (
     UNIT_CENTIMETER,
     DEVICE_CLASS_OCCUPANCY,
     DEVICE_CLASS_DISTANCE,
+    DEVICE_CLASS_SPEED,
     STATE_CLASS_MEASUREMENT,
 )
 
@@ -33,6 +34,8 @@ CONF_TARGET = "target"
 CONF_DEBUG = "debug"
 CONF_X_SENSOR = "x_position"
 CONF_Y_SENSOR = "y_position"
+CONF_SPEED_SENSOR = "speed"
+UNIT_METER_PER_SECOND = "m/s"
 
 ld2450_ns = cg.esphome_ns.namespace("ld2450")
 LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
@@ -58,6 +61,26 @@ POSITION_SENSOR_SCHEMA = cv.Schema(
     )
 )
 
+SPEED_SENSOR_SCHEMA = cv.Schema(
+    sensor.sensor_schema(
+        unit_of_measurement=UNIT_METER_PER_SECOND,
+        accuracy_decimals=0,
+        state_class=STATE_CLASS_MEASUREMENT,
+        device_class=DEVICE_CLASS_SPEED,
+    )
+    .extend(cv.polling_component_schema("1s"))
+    .extend(
+        {
+            cv.GenerateID(): cv.declare_id(PollingSensor),
+            cv.Optional(
+                CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER_PER_SECOND
+            ): cv.All(
+                cv.one_of(UNIT_METER_PER_SECOND),
+            ),
+        }
+    )
+)
+
 TARGET_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_TARGET): cv.Optional(
@@ -67,6 +90,7 @@ TARGET_SCHEMA = cv.Schema(
                 cv.Optional(CONF_DEBUG, default=False): cv.boolean,
                 cv.Optional(CONF_X_SENSOR): POSITION_SENSOR_SCHEMA,
                 cv.Optional(CONF_Y_SENSOR): POSITION_SENSOR_SCHEMA,
+                cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA,
             }
         ),
     }
@@ -176,7 +200,7 @@ def target_to_code(config, user_index: int):
     cg.add(target.set_name(config[CONF_NAME]))
     cg.add(target.set_debugging(config[CONF_DEBUG]))
 
-    for SENSOR in [CONF_X_SENSOR, CONF_Y_SENSOR]:
+    for SENSOR in [CONF_X_SENSOR, CONF_Y_SENSOR, CONF_SPEED_SENSOR]:
         if sensor_config := config.get(SENSOR):
             # Add Target name as prefix to sensor name
             sensor_config[CONF_NAME] = f"{config[CONF_NAME]} {sensor_config[CONF_NAME]}"
@@ -189,5 +213,7 @@ def target_to_code(config, user_index: int):
                 cg.add(target.set_x_position_sensor(sensor_var))
             elif SENSOR == CONF_Y_SENSOR:
                 cg.add(target.set_y_position_sensor(sensor_var))
+            elif SENSOR == CONF_SPEED_SENSOR:
+                cg.add(target.set_speed_sensor(sensor_var))
 
     return target
