@@ -7,6 +7,9 @@
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
+#ifdef USE_BINARY_SENSOR
+#include "esphome/components/sensor/sensor.h"
+#endif
 #ifdef USE_NUMBER
 #include "esphome/components/number/number.h"
 #endif
@@ -20,6 +23,9 @@ namespace esphome::ld2450
     {
 #ifdef USE_BINARY_SENSOR
         SUB_BINARY_SENSOR(occupancy)
+#endif
+#ifdef USE_SENSOR
+        SUB_SENSOR(target_count)
 #endif
 #ifdef USE_NUMBER
         SUB_NUMBER(max_distance)

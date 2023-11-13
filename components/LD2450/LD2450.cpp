@@ -117,16 +117,20 @@ namespace esphome::ld2450
                 targets_[i]->clear();
         }
 
-        bool occupied = false;
+        int target_count = 0;
         for (Target *target : targets_)
         {
-            occupied |= target->is_present();
+            target_count += target->is_present();
         }
-        is_occupied_ = occupied;
+        is_occupied_ = target_count > 0;
 
 #ifdef USE_BINARY_SENSOR
         if (occupancy_binary_sensor_ != nullptr && occupancy_binary_sensor_->state != is_occupied_)
-            occupancy_binary_sensor_->publish_state(occupied);
+            occupancy_binary_sensor_->publish_state(is_occupied_);
+#endif
+#ifdef USE_SENSOR
+        if (target_count_sensor_ != nullptr && target_count_sensor_->state != target_count)
+            target_count_sensor_->publish_state(target_count);
 #endif
     }
 

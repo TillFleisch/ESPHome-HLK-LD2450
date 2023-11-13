@@ -28,6 +28,7 @@ UART_ID = "uart_id"
 CONF_USE_FAST_OFF = "fast_off_detection"
 CONF_FLIP_X_AXIS = "flip_x_axis"
 CONF_OCCUPANCY = "occupancy"
+CONF_TARGET_COUNT = "target_count"
 CONF_MAX_DISTANCE = "max_detection_distance"
 CONF_MAX_DISTANCE_MARGIN = "max_distance_margin"
 CONF_TARGETS = "targets"
@@ -138,6 +139,9 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
                 device_class=DEVICE_CLASS_OCCUPANCY
             ),
+            cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
+                accuracy_decimals=0,
+            ),
             cv.Optional(CONF_MAX_DISTANCE_MARGIN, default="25cm"): cv.All(
                 cv.distance, cv.Range(min=0.0, max=6.0)
             ),
@@ -189,6 +193,11 @@ def to_code(config):
             occupancy_config
         )
         cg.add(var.set_occupancy_binary_sensor(occupancy_binary_sensor))
+
+    # Add target count sensor sensor if present
+    if target_count_config := config.get(CONF_TARGET_COUNT):
+        target_count_sensor = yield sensor.new_sensor(target_count_config)
+        cg.add(var.set_target_count_sensor(target_count_sensor))
 
     # Add max distance value
     if max_distance_config := config.get(CONF_MAX_DISTANCE):
