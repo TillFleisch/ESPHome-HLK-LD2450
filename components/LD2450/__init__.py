@@ -40,7 +40,13 @@ CONF_SPEED_SENSOR = "speed"
 CONF_DISTANCE_SENSOR = "distance"
 CONF_DISTANCE_RESOLUTION_SENSOR = "distance_resolution"
 CONF_ANGLE_SENSOR = "angle"
-
+CONF_ZONES = "zones"
+CONF_ZONE = "zone"
+CONF_MARGIN = "margin"
+CONF_POLYGON = "polygon"
+CONF_POINT = "point"
+CONF_X = "x"
+CONF_Y = "y"
 UNIT_METER_PER_SECOND = "m/s"
 ICON_ANGLE_ACUTE = "mdi:angle-acute"
 
@@ -49,6 +55,7 @@ LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
 Target = ld2450_ns.class_("Target", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
+Zone = ld2450_ns.class_("Zone")
 
 DISTANCE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
@@ -108,7 +115,7 @@ DEGREE_SENSOR_SCHEMA = (
 
 TARGET_SCHEMA = cv.Schema(
     {
-        cv.Required(CONF_TARGET): cv.Optional(
+        cv.Required(CONF_TARGET): cv.Schema(
             {
                 cv.GenerateID(): cv.declare_id(Target),
                 cv.Optional(CONF_NAME): cv.string_strict,
@@ -154,6 +161,70 @@ TARGET_SCHEMA = cv.Schema(
     }
 )
 
+POLYGON_SCHEMA = cv.Schema(
+    {
+        cv.Required(CONF_POINT): cv.Schema(
+            {
+                cv.Required(CONF_X): cv.All(cv.distance),
+                cv.Required(CONF_Y): cv.All(cv.distance),
+            }
+        )
+    }
+)
+
+
+def is_convex(points):
+    """Determine if the polygon given by the list of points is convex."""
+    last_cross_product = None
+    len_ = len(points)
+    for i in range(0, len_ + 1):
+        dx_1 = points[(i + 1) % len_][0] - points[i % len_][0]
+        dy_1 = points[(i + 1) % len_][1] - points[i % len_][1]
+        dx_2 = points[(i + 2) % len_][0] - points[(i + 1) % len_][0]
+        dy_2 = points[(i + 2) % len_][1] - points[(i + 1) % len_][1]
+        cross_product = dx_1 * dy_2 - dy_1 * dx_2
+
+        if last_cross_product is not None and (
+            (cross_product > 0 and last_cross_product < 0)
+            or (cross_product > 0 and last_cross_product < 0)
+        ):
+            return False
+        last_cross_product = cross_product
+    return True
+
+
+def validate_polygon(config):
+    """Assert that the provided polygon is convex."""
+
+    points = []
+    for point_config in config[CONF_POLYGON]:
+        point_config = point_config[CONF_POINT]
+        points.append((float(point_config[CONF_X]), float(point_config[CONF_Y])))
+
+    if not is_convex(points):
+        raise cv.Invalid("Polygon is not convex (and non-intersecting).")
+
+    return config
+
+
+ZONE_SCHEMA = cv.Schema(
+    {
+        cv.Required(CONF_ZONE): cv.All(
+            {
+                cv.GenerateID(): cv.declare_id(Zone),
+                cv.Required(CONF_NAME): cv.string_strict,
+                cv.Optional(CONF_MARGIN, default="25cm"): cv.All(
+                    cv.distance, cv.Range(min=0.0, max=6.0)
+                ),
+                cv.Required(CONF_POLYGON): cv.All(
+                    cv.ensure_list(POLYGON_SCHEMA), cv.Length(min=3)
+                ),
+            },
+            validate_polygon,
+        )
+    }
+)
+
 CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
     {
         cv.GenerateID(): cv.declare_id(LD2450),
@@ -162,6 +233,10 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
         cv.Optional(CONF_TARGETS): cv.All(
             cv.ensure_list(TARGET_SCHEMA),
             cv.Length(min=1, max=3),
+        ),
+        cv.Optional(CONF_ZONES): cv.All(
+            cv.ensure_list(ZONE_SCHEMA),
+            cv.Length(min=1),
         ),
         cv.Optional(CONF_FLIP_X_AXIS, default=False): cv.boolean,
         cv.Optional(CONF_USE_FAST_OFF, default=False): cv.boolean,
@@ -214,6 +289,13 @@ def to_code(config):
         for index, target_config in enumerate(targets_config):
             target = yield target_to_code(target_config[CONF_TARGET], index)
             cg.add(var.register_target(target))
+
+    # process zones list
+    if zones_config := config.get(CONF_ZONES):
+        # Register target on controller
+        for zone_config in zones_config:
+            zone = yield zone_to_code(zone_config[CONF_ZONE])
+            cg.add(var.register_zone(zone))
 
     # Add binary occupancy sensor if present
     if occupancy_config := config.get(CONF_OCCUPANCY):
@@ -298,3 +380,22 @@ def target_to_code(config, user_index: int):
                 cg.add(target.set_distance_sensor(sensor_var))
 
     return target
+
+
+def zone_to_code(config):
+    zone = cg.new_Pvariable(config[CONF_ID])
+
+    cg.add(zone.set_name(config[CONF_NAME]))
+    cg.add(zone.set_margin(config[CONF_MARGIN]))
+
+    # Add points to the polygon of the zone object
+    for point_config in config[CONF_POLYGON]:
+        point_config = point_config[CONF_POINT]
+
+        cg.add(
+            zone.append_point(
+                (float(point_config[CONF_X])), float(point_config[CONF_Y])
+            )
+        )
+
+    return zone

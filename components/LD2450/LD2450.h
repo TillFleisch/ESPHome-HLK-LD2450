@@ -4,6 +4,7 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/helpers.h"
 #include "target.h"
+#include "zone.h"
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
@@ -51,6 +52,14 @@ namespace esphome::ld2450
         void register_target(Target *target)
         {
             targets_.push_back(target);
+        }
+
+        /**
+         * @brief Adds a zone to the list of registered zones.
+         */
+        void register_zone(Zone *zone)
+        {
+            zones_.push_back(zone);
         }
 
         /**
@@ -143,5 +152,8 @@ namespace esphome::ld2450
 
         /// @brief List of registered and mock tracking targets
         std::vector<Target *> targets_;
+
+        /// @brief List of registered zones
+        std::vector<Zone *> zones_;
     };
 }

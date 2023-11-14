@@ -132,6 +132,12 @@ namespace esphome::ld2450
         if (target_count_sensor_ != nullptr && target_count_sensor_->state != target_count)
             target_count_sensor_->publish_state(target_count);
 #endif
+
+        // Update zones and related components
+        for (Zone *zone : zones_)
+        {
+            zone->update(targets_);
+        }
     }
 
 }
