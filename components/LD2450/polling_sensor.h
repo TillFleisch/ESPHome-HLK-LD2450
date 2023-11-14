@@ -26,7 +26,7 @@ namespace esphome::ld2450
 
         void update() override
         {
-            if (state != value_)
+            if (raw_state != value_ && !(std::isnan(raw_state) && std::isnan(value_)))
                 publish_state(value_);
         }
 
