@@ -1,6 +1,11 @@
 #pragma once
 #include "target.h"
-
+#ifdef USE_BINARY_SENSOR
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#endif
+#ifdef USE_BINARY_SENSOR
+#include "esphome/components/sensor/sensor.h"
+#endif
 namespace esphome::ld2450
 {
     /**
@@ -25,6 +30,12 @@ namespace esphome::ld2450
      */
     class Zone
     {
+#ifdef USE_BINARY_SENSOR
+        SUB_BINARY_SENSOR(occupancy)
+#endif
+#ifdef USE_SENSOR
+        SUB_SENSOR(target_count)
+#endif
     public:
         /**
          * @brief Update the name of this zone.
@@ -49,6 +60,11 @@ namespace esphome::ld2450
          * @param targets Reference to a vector of targets which will be used for calculation
          * */
         void update(std::vector<Target *> &targets);
+
+        /**
+         * Logs the Zone configuration.
+         */
+        void dump_config();
 
         /**
          * Gets the occupancy status of this Zone.

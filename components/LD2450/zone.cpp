@@ -2,6 +2,7 @@
 
 namespace esphome::ld2450
 {
+    const char *TAG = "Zone";
 
     bool is_convex(std::vector<Point> polygon)
     {
@@ -24,6 +25,19 @@ namespace esphome::ld2450
         return true;
     }
 
+    void Zone::dump_config()
+    {
+        ESP_LOGCONFIG(TAG, "Zone: %s", name_);
+        ESP_LOGCONFIG(TAG, "  polygon_size: %i", polygon_.size());
+        ESP_LOGCONFIG(TAG, "  polygon valid: %s", is_convex(polygon_) ? "true" : "false");
+#ifdef USE_BINARY_SENSOR
+        LOG_BINARY_SENSOR("  ", "OccupancyBinarySensor", occupancy_binary_sensor_);
+#endif
+#ifdef USE_SENSOR
+        LOG_SENSOR("  ", "TargetCountSensor", target_count_sensor_);
+#endif
+    }
+
     void Zone::update(std::vector<Target *> &targets)
     {
         if (polygon_.size() < 3)
@@ -34,6 +48,15 @@ namespace esphome::ld2450
         {
             target_count += contains_target(target);
         }
+
+#ifdef USE_BINARY_SENSOR
+        if (occupancy_binary_sensor_ != nullptr && (occupancy_binary_sensor_->state != (target_count > 0) || !occupancy_binary_sensor_->has_state()))
+            occupancy_binary_sensor_->publish_state(target_count > 0);
+#endif
+#ifdef USE_SENSOR
+        if (target_count_sensor_ != nullptr && (target_count_sensor_->state != target_count || !target_count_sensor_->has_state()))
+            target_count_sensor_->publish_state(target_count);
+#endif
     }
 
     bool Zone::contains_target(Target *target)

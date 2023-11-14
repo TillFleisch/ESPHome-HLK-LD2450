@@ -52,6 +52,14 @@ namespace esphome::ld2450
 #ifdef USE_NUMBER
         LOG_NUMBER("  ", "MaxDistanceNumber", max_distance_number_);
 #endif
+        ESP_LOGCONFIG(TAG, "Zones:");
+        if (zones_.size() > 0)
+        {
+            for (Zone *zone : zones_)
+            {
+                zone->dump_config();
+            }
+        }
     }
 
     void LD2450::loop()

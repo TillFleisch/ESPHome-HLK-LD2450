@@ -10,6 +10,7 @@ from esphome.const import (
     CONF_RESTORE_VALUE,
     CONF_INITIAL_VALUE,
     CONF_UNIT_OF_MEASUREMENT,
+    CONF_PUBLISH_INITIAL_STATE,
     UNIT_METER,
     UNIT_CENTIMETER,
     UNIT_DEGREES,
@@ -219,6 +220,16 @@ ZONE_SCHEMA = cv.Schema(
                 cv.Required(CONF_POLYGON): cv.All(
                     cv.ensure_list(POLYGON_SCHEMA), cv.Length(min=3)
                 ),
+                cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
+                    device_class=DEVICE_CLASS_OCCUPANCY,
+                ).extend(
+                    cv.Schema({cv.Optional(CONF_NAME, default=""): cv.string_strict})
+                ),
+                cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
+                    accuracy_decimals=0,
+                ).extend(
+                    cv.Schema({cv.Optional(CONF_NAME, default=""): cv.string_strict})
+                ),
             },
             validate_polygon,
         )
@@ -397,5 +408,27 @@ def zone_to_code(config):
                 (float(point_config[CONF_X])), float(point_config[CONF_Y])
             )
         )
+
+    # Add binary occupancy sensor if present
+    if occupancy_config := config.get(CONF_OCCUPANCY):
+        occupancy_config[CONF_NAME] = (
+            f"{config[CONF_NAME]} {occupancy_config[CONF_NAME]}"
+            if occupancy_config.get(CONF_NAME, "") != ""
+            else config[CONF_NAME]
+        )
+        occupancy_binary_sensor = yield binary_sensor.new_binary_sensor(
+            occupancy_config
+        )
+        cg.add(zone.set_occupancy_binary_sensor(occupancy_binary_sensor))
+
+    # Add target count sensor sensor if present
+    if target_count_config := config.get(CONF_TARGET_COUNT):
+        target_count_config[CONF_NAME] = (
+            f"{config[CONF_NAME]} {target_count_config[CONF_NAME]}"
+            if target_count_config.get(CONF_NAME, "") != ""
+            else config[CONF_NAME]
+        )
+        target_count_sensor = yield sensor.new_sensor(target_count_config)
+        cg.add(zone.set_target_count_sensor(target_count_sensor))
 
     return zone
