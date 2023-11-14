@@ -50,7 +50,7 @@ Target = ld2450_ns.class_("Target", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 
-DISTANCE_SENSOR_SCHEMA = cv.Schema(
+DISTANCE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
         unit_of_measurement=UNIT_METER,
         accuracy_decimals=2,
@@ -68,7 +68,7 @@ DISTANCE_SENSOR_SCHEMA = cv.Schema(
     )
 )
 
-SPEED_SENSOR_SCHEMA = cv.Schema(
+SPEED_SENSOR_SCHEMA = (
     sensor.sensor_schema(
         unit_of_measurement=UNIT_METER_PER_SECOND,
         accuracy_decimals=0,
@@ -88,7 +88,7 @@ SPEED_SENSOR_SCHEMA = cv.Schema(
     )
 )
 
-DEGREE_SENSOR_SCHEMA = cv.Schema(
+DEGREE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
         unit_of_measurement=UNIT_DEGREES,
         accuracy_decimals=0,
@@ -113,59 +113,87 @@ TARGET_SCHEMA = cv.Schema(
                 cv.GenerateID(): cv.declare_id(Target),
                 cv.Optional(CONF_NAME): cv.string_strict,
                 cv.Optional(CONF_DEBUG, default=False): cv.boolean,
-                cv.Optional(CONF_X_SENSOR): DISTANCE_SENSOR_SCHEMA,
-                cv.Optional(CONF_Y_SENSOR): DISTANCE_SENSOR_SCHEMA,
-                cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA,
-                cv.Optional(CONF_DISTANCE_RESOLUTION_SENSOR): DISTANCE_SENSOR_SCHEMA,
-                cv.Optional(CONF_ANGLE_SENSOR): DEGREE_SENSOR_SCHEMA,
-                cv.Optional(CONF_DISTANCE_SENSOR): DISTANCE_SENSOR_SCHEMA,
+                cv.Optional(CONF_X_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
+                    cv.Schema(
+                        {cv.Optional(CONF_NAME, default="X Position"): cv.string_strict}
+                    )
+                ),
+                cv.Optional(CONF_Y_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
+                    cv.Schema(
+                        {cv.Optional(CONF_NAME, default="Y Position"): cv.string_strict}
+                    )
+                ),
+                cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA.extend(
+                    cv.Schema(
+                        {cv.Optional(CONF_NAME, default="Speed"): cv.string_strict}
+                    )
+                ),
+                cv.Optional(
+                    CONF_DISTANCE_RESOLUTION_SENSOR
+                ): DISTANCE_SENSOR_SCHEMA.extend(
+                    cv.Schema(
+                        {
+                            cv.Optional(
+                                CONF_NAME, default="Distance Resolution"
+                            ): cv.string_strict
+                        }
+                    )
+                ),
+                cv.Optional(CONF_ANGLE_SENSOR): DEGREE_SENSOR_SCHEMA.extend(
+                    cv.Schema(
+                        {cv.Optional(CONF_NAME, default="Angle"): cv.string_strict}
+                    )
+                ),
+                cv.Optional(CONF_DISTANCE_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
+                    cv.Schema(
+                        {cv.Optional(CONF_NAME, default="Distance"): cv.string_strict}
+                    )
+                ),
             }
         ),
     }
 )
 
-CONFIG_SCHEMA = cv.All(
-    uart.UART_DEVICE_SCHEMA.extend(
-        {
-            cv.GenerateID(): cv.declare_id(LD2450),
-            cv.Required(UART_ID): cv.use_id(UARTComponent),
-            cv.Optional(CONF_NAME, default="LD2450"): cv.string_strict,
-            cv.Optional(CONF_TARGETS): cv.All(
-                cv.ensure_list(TARGET_SCHEMA),
-                cv.Length(min=1, max=3),
-            ),
-            cv.Optional(CONF_FLIP_X_AXIS, default=False): cv.boolean,
-            cv.Optional(CONF_USE_FAST_OFF, default=False): cv.boolean,
-            cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
-                device_class=DEVICE_CLASS_OCCUPANCY
-            ),
-            cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
-                accuracy_decimals=0,
-            ),
-            cv.Optional(CONF_MAX_DISTANCE_MARGIN, default="25cm"): cv.All(
-                cv.distance, cv.Range(min=0.0, max=6.0)
-            ),
-            cv.Optional(CONF_MAX_DISTANCE): cv.Any(
-                cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
-                number.NUMBER_SCHEMA.extend(
-                    {
-                        cv.GenerateID(): cv.declare_id(MaxDistanceNumber),
-                        cv.Required(CONF_NAME): cv.string_strict,
-                        cv.Optional(CONF_INITIAL_VALUE, default="6.0m"): cv.All(
-                            cv.distance, cv.Range(min=0.0, max=6.0)
-                        ),
-                        cv.Optional(CONF_STEP, default="10cm"): cv.All(
-                            cv.distance, cv.Range(min=0.0, max=6.0)
-                        ),
-                        cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
-                        cv.Optional(
-                            CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER
-                        ): cv.one_of(UNIT_METER, lower="true"),
-                    }
-                ).extend(cv.COMPONENT_SCHEMA),
-            ),
-        }
-    )
+CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
+    {
+        cv.GenerateID(): cv.declare_id(LD2450),
+        cv.Required(UART_ID): cv.use_id(UARTComponent),
+        cv.Optional(CONF_NAME, default="LD2450"): cv.string_strict,
+        cv.Optional(CONF_TARGETS): cv.All(
+            cv.ensure_list(TARGET_SCHEMA),
+            cv.Length(min=1, max=3),
+        ),
+        cv.Optional(CONF_FLIP_X_AXIS, default=False): cv.boolean,
+        cv.Optional(CONF_USE_FAST_OFF, default=False): cv.boolean,
+        cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
+            device_class=DEVICE_CLASS_OCCUPANCY
+        ),
+        cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
+            accuracy_decimals=0,
+        ),
+        cv.Optional(CONF_MAX_DISTANCE_MARGIN, default="25cm"): cv.All(
+            cv.distance, cv.Range(min=0.0, max=6.0)
+        ),
+        cv.Optional(CONF_MAX_DISTANCE): cv.Any(
+            cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
+            number.NUMBER_SCHEMA.extend(
+                {
+                    cv.GenerateID(): cv.declare_id(MaxDistanceNumber),
+                    cv.Required(CONF_NAME): cv.string_strict,
+                    cv.Optional(CONF_INITIAL_VALUE, default="6.0m"): cv.All(
+                        cv.distance, cv.Range(min=0.0, max=6.0)
+                    ),
+                    cv.Optional(CONF_STEP, default="10cm"): cv.All(
+                        cv.distance, cv.Range(min=0.0, max=6.0)
+                    ),
+                    cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                    cv.Optional(
+                        CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER
+                    ): cv.one_of(UNIT_METER, lower="true"),
+                }
+            ).extend(cv.COMPONENT_SCHEMA),
+        ),
+    }
 )
 
 
@@ -246,7 +274,11 @@ def target_to_code(config, user_index: int):
     ]:
         if sensor_config := config.get(SENSOR):
             # Add Target name as prefix to sensor name
-            sensor_config[CONF_NAME] = f"{config[CONF_NAME]} {sensor_config[CONF_NAME]}"
+            sensor_config[CONF_NAME] = (
+                f"{config[CONF_NAME]} {sensor_config[CONF_NAME]}"
+                if CONF_NAME in sensor_config
+                else config[CONF_NAME]
+            )
 
             sensor_var = cg.new_Pvariable(sensor_config[CONF_ID])
             yield cg.register_component(sensor_var, sensor_config)
