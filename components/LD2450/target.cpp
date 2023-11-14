@@ -15,6 +15,11 @@ namespace esphome::ld2450
         ESP_LOGCONFIG(TAG, "Target: %s", name.c_str());
         ESP_LOGCONFIG(TAG, "  debug: %s", debug_ ? "True" : "False");
         LOG_SENSOR("  ", "X Position", x_position_sensor_);
+        LOG_SENSOR("  ", "Y Position", y_position_sensor_);
+        LOG_SENSOR("  ", "Speed", speed_sensor_);
+        LOG_SENSOR("  ", "Distance Resolution", distance_resolution_sensor_);
+        LOG_SENSOR("  ", "Angle", angle_sensor_);
+        LOG_SENSOR("  ", "Distance", distance_sensor_);
     }
 
     void Target::loop()
