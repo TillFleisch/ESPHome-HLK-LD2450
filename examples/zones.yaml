@@ -1,0 +1,54 @@
+external_components:
+  - source: github:///TillFleisch/ESPHome-HLK-LD2450@main
+
+uart:
+  id: uart_bus
+  rx_pin: 
+    number: GPIO16
+    mode:
+      input: true
+      pullup: true
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+  data_bits: 8
+
+LD2450:
+  uart_id: uart_bus
+  zones:
+    - zone:
+        name: "Office Right"
+        margin: 25cm
+        polygon:
+          - point:
+              x: 0m
+              y: 0m
+          - point:
+              x: 0m
+              y: 6m
+          - point:
+              x: 6m
+              y: 6m
+          - point:
+              x: 6m
+              y: 0m
+        occupancy:
+          id: z1_occupancy
+        target_count:
+          id: z1_target_count
+    - zone:
+        name: "Office Corner"
+        margin: 25cm
+        polygon:
+          - point:
+              x: -0m
+              y: 0m
+          - point:
+              x: -0m
+              y: 2.4m
+          - point:
+              x: -2.4m
+              y: 0m
+        occupancy:
+          id: z2_occupancy
+

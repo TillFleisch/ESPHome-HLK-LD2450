@@ -1,0 +1,23 @@
+external_components:
+  - source: github:///TillFleisch/ESPHome-HLK-LD2450@main
+
+uart:
+  id: uart_bus
+  rx_pin: 
+    number: GPIO16
+    mode:
+      input: true
+      pullup: true
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+  data_bits: 8
+
+LD2450:
+  uart_id: uart_bus
+  max_detection_distance:
+    name: "Max Distance"
+    initial_value: 4m
+  #max_detection_distance: 1.5m
+  occupancy:
+    name: Occupancy
