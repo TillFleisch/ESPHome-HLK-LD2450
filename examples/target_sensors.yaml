@@ -1,5 +1,5 @@
 external_components:
-  - source: github:///TillFleisch/ESPHome-HLK-LD2450@main
+  - source: github://TillFleisch/ESPHome-HLK-LD2450@main
 
 uart:
   id: uart_bus
