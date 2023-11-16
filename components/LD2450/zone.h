@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include "target.h"
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
@@ -53,6 +54,15 @@ namespace esphome::ld2450
         void set_margin(float margin)
         {
             margin_ = int(margin * 1000);
+        }
+
+        /**
+         * @brief Sets the target timeout which is used for targets inside of the polygon.
+         * @param time time in ms
+         */
+        void set_target_timeout(int time)
+        {
+            target_timeout_ = time;
         }
 
         /**
@@ -121,6 +131,9 @@ namespace esphome::ld2450
 
         /// @brief Margin around the polygon, which still in mm
         uint16_t margin_ = 250;
+
+        /// @brief timeout after which a target within the is considered absent
+        int target_timeout_ = 5000;
 
         /// @brief List of targets which are currently tracked inside of this polygon
         std::vector<Target *> tracked_targets_{};

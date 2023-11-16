@@ -30,6 +30,7 @@ namespace esphome::ld2450
         ESP_LOGCONFIG(TAG, "Zone: %s", name_);
         ESP_LOGCONFIG(TAG, "  polygon_size: %i", polygon_.size());
         ESP_LOGCONFIG(TAG, "  polygon valid: %s", is_convex(polygon_) ? "true" : "false");
+        ESP_LOGCONFIG(TAG, "  target_timeout: %i", target_timeout_);
 #ifdef USE_BINARY_SENSOR
         LOG_BINARY_SENSOR("  ", "OccupancyBinarySensor", occupancy_binary_sensor_);
 #endif
@@ -70,11 +71,16 @@ namespace esphome::ld2450
 
         if (!target->is_present())
         {
-            // Remove from tracking list
-            if (it != tracked_targets_.end())
+            if (!is_tracked)
+            {
+                return false;
+            }
+            // Remove from tracking list after timeout (target did not leave via polygon boundary)
+            else if (is_tracked && millis() - target->get_last_change() > target_timeout_)
+            {
                 tracked_targets_.erase(it);
-
-            return false;
+                return false;
+            }
         }
 
         Point point = Point(target->get_x(), target->get_y());
@@ -140,7 +146,7 @@ namespace esphome::ld2450
             if (min_distance > margin_)
             {
                 // Remove from target from tracking list
-                if (it != tracked_targets_.end())
+                if (is_tracked)
                     tracked_targets_.erase(it);
                 return false;
             }

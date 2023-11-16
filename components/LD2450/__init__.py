@@ -43,6 +43,7 @@ CONF_ANGLE_SENSOR = "angle"
 CONF_ZONES = "zones"
 CONF_ZONE = "zone"
 CONF_MARGIN = "margin"
+CONF_TARGET_TIMEOUT = "target_timeout"
 CONF_POLYGON = "polygon"
 CONF_POINT = "point"
 CONF_X = "x"
@@ -216,6 +217,9 @@ ZONE_SCHEMA = cv.Schema(
                 cv.Optional(CONF_MARGIN, default="25cm"): cv.All(
                     cv.distance, cv.Range(min=0.0, max=6.0)
                 ),
+                cv.Optional(
+                    CONF_TARGET_TIMEOUT, default="5s"
+                ): cv.positive_time_period_milliseconds,
                 cv.Required(CONF_POLYGON): cv.All(
                     cv.ensure_list(POLYGON_SCHEMA), cv.Length(min=3)
                 ),
@@ -393,10 +397,12 @@ def target_to_code(config, user_index: int):
 
 
 def zone_to_code(config):
+    """Code generation for zones and their sub-sensors."""
     zone = cg.new_Pvariable(config[CONF_ID])
 
     cg.add(zone.set_name(config[CONF_NAME]))
     cg.add(zone.set_margin(config[CONF_MARGIN]))
+    cg.add(zone.set_target_timeout(config[CONF_TARGET_TIMEOUT]))
 
     # Add points to the polygon of the zone object
     for point_config in config[CONF_POLYGON]:

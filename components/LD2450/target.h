@@ -113,6 +113,24 @@ namespace esphome::ld2450
         bool is_present();
 
         /**
+         * @brief Determines if this target is currently moving
+         * @return true if the target is moving, false if it is stationary.
+         */
+        bool is_moving()
+        {
+            return speed_ != 0;
+        }
+
+        /**
+         * @brief Time since last last change in values.
+         * @return timestamp in milliseconds since start
+         */
+        long get_last_change()
+        {
+            return last_change_;
+        }
+
+        /**
          * @brief Rests all values in this target
          */
         void clear()

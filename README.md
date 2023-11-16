@@ -89,6 +89,7 @@ The name of zone sub-sensor will be prefixed with the zone name. For instance, i
 - **name**(**Required**, string): The name of the zone. This name will be used as a prefix for sub-sensors.
 - **polygon**(**Required**, polygon): A simple convex polygon with at least 3 vertices. See [Polygon](#polygon).
 - **margin**(**Optional**, distance): The margin that is added to the zone. Targets that are already being tracked, will still be tracked within the additional margin. This prevents on-off-flickering of related sensors. Defaults to `25cm`.
+- **target_timeout**(**Optional**, time): The time after which a target within the zone is considered absent. This helps with continuous detection of non-moving targets. Targets which leave the zone via polygon boundaries are still detected as absent form the zone immediately. Defaults to `5s`.
 - **occupancy**(**Optional**, binary sensor): A binary sensor, that will be triggered if at least one target is tracked inside the zone. `id` or `name` required. The default name is empty, which results in the sensor being named after the zone. All options from [Binary Sensor](https://esphome.io/components/binary_sensor/#config-binary-sensor).
 - **target_count**(**Optional**, sensor): A sensor that provides the number of currently tracked targets within the zone. `id` or `name` required. The default name is empty, which results in the sensor being named after the zone. All options from [Sensor](https://esphome.io/components/sensor/#config-sensor).
 
