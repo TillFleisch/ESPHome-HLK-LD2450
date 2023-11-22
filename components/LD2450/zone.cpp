@@ -66,20 +66,26 @@ namespace esphome::ld2450
             return false;
 
         // Check if the target is already beeing tracked
-        auto it = std::find(tracked_targets_.begin(), tracked_targets_.end(), target);
-        bool is_tracked = (it != tracked_targets_.end());
-
+        bool is_tracked = tracked_targets_.count(target);
         if (!target->is_present())
         {
             if (!is_tracked)
             {
                 return false;
             }
-            // Remove from tracking list after timeout (target did not leave via polygon boundary)
-            else if (is_tracked && millis() - target->get_last_change() > target_timeout_)
+            else
             {
-                tracked_targets_.erase(it);
-                return false;
+                // Remove from tracking list after timeout (target did not leave via polygon boundary)
+                if (millis() - tracked_targets_[target] > target_timeout_)
+                {
+                    tracked_targets_.erase(target);
+                    return false;
+                }
+                else
+                {
+                    // Report as contained as long as the target has not timed out
+                    return true;
+                }
             }
         }
 
@@ -135,10 +141,10 @@ namespace esphome::ld2450
             }
         }
 
-        if (!is_tracked && is_inside)
+        if (is_inside && target->is_present())
         {
-            // Add newly tracked targets
-            tracked_targets_.push_back(target);
+            // Add and Update last seen time
+            tracked_targets_[target] = millis();
         }
         else if (is_tracked && !is_inside)
         {
@@ -147,7 +153,7 @@ namespace esphome::ld2450
             {
                 // Remove from target from tracking list
                 if (is_tracked)
-                    tracked_targets_.erase(it);
+                    tracked_targets_.erase(target);
                 return false;
             }
         }

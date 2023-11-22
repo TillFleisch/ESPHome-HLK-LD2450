@@ -135,7 +135,7 @@ namespace esphome::ld2450
         /// @brief timeout after which a target within the is considered absent
         int target_timeout_ = 5000;
 
-        /// @brief List of targets which are currently tracked inside of this polygon
-        std::vector<Target *> tracked_targets_{};
+        /// @brief Map of targets which are currently tracked inside of this polygon with their last seen timestamp
+        std::map<Target *, long> tracked_targets_{};
     };
 }
