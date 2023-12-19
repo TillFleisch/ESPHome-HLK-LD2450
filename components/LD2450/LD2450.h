@@ -14,6 +14,9 @@
 #ifdef USE_NUMBER
 #include "esphome/components/number/number.h"
 #endif
+#ifdef USE_BUTTON
+#include "esphome/components/button/button.h"
+#endif
 
 #define COMMAND_MAX_RETRIES 5
 #define COMMAND_RETRY_DELAY 100
@@ -21,9 +24,20 @@
 #define COMMAND_ENTER_CONFIG 0xFF
 #define COMMAND_LEAVE_CONFIG 0xFE
 #define COMMAND_READ_VERSION 0xA0
+#define COMMAND_RESTART 0xA3
+#define COMMAND_FACTORY_RESET 0xA2
 
 namespace esphome::ld2450
 {
+    /**
+     * @brief Empty button definition used as a template for the restart and factory reset buttons.
+     */
+    class EmptyButton : public button::Button
+    {
+    protected:
+        virtual void press_action(){};
+    };
+
     /**
      * @brief UART component responsible for processing the data stream provided by the HLK-LD2450 sensor
      */
@@ -37,6 +51,10 @@ namespace esphome::ld2450
 #endif
 #ifdef USE_NUMBER
         SUB_NUMBER(max_distance)
+#endif
+#ifdef USE_BUTTON
+        SUB_BUTTON(restart)
+        SUB_BUTTON(factory_reset)
 #endif
     public:
         void setup() override;
@@ -135,6 +153,25 @@ namespace esphome::ld2450
         {
             uint8_t read_version[2] = {COMMAND_READ_VERSION, 0x00};
             send_config_message(read_version, 2);
+        }
+
+        /**
+         * @brief Restarts the sensor module
+         */
+        void perform_restart()
+        {
+            uint8_t restart[2] = {COMMAND_RESTART, 0x00};
+            send_config_message(restart, 2);
+        }
+
+        /**
+         * @brief Resets the module to it's factory default settings and performs a restart.
+         */
+        void perform_factory_reset()
+        {
+            uint8_t reset[2] = {COMMAND_FACTORY_RESET, 0x00};
+            send_config_message(reset, 2);
+            perform_restart();
         }
 
     protected:

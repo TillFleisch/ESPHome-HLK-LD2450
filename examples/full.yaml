@@ -29,6 +29,11 @@ LD2450:
     initial_value: 4m
   max_distance_margin: 30cm
   
+  restart_button:
+    name: "Restart Sensor"
+  factory_reset_button:
+    name: "Factory Reset Sensor"
+
   occupancy:
     name: Occupancy
   target_count:

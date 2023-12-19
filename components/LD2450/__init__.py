@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart, binary_sensor, number, sensor
+from esphome.components import uart, binary_sensor, number, sensor, button
 from esphome.components.uart import UARTComponent
 from esphome.const import (
     CONF_ID,
@@ -15,10 +15,14 @@ from esphome.const import (
     DEVICE_CLASS_OCCUPANCY,
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_SPEED,
+    DEVICE_CLASS_RESTART,
     STATE_CLASS_MEASUREMENT,
+    ICON_RESTART_ALERT,
+    ENTITY_CATEGORY_DIAGNOSTIC,
+    ENTITY_CATEGORY_CONFIG,
 )
 
-AUTO_LOAD = ["binary_sensor", "number", "sensor"]
+AUTO_LOAD = ["binary_sensor", "number", "sensor", "button"]
 
 DEPENDENCIES = ["uart"]
 
@@ -47,6 +51,8 @@ CONF_POLYGON = "polygon"
 CONF_POINT = "point"
 CONF_X = "x"
 CONF_Y = "y"
+CONF_RESTART_BUTTON = "restart_button"
+CONF_FACTORY_RESET_BUTTON = "factory_reset_button"
 UNIT_METER_PER_SECOND = "m/s"
 ICON_ANGLE_ACUTE = "mdi:angle-acute"
 
@@ -56,6 +62,7 @@ Target = ld2450_ns.class_("Target", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 Zone = ld2450_ns.class_("Zone")
+EmptyButton = ld2450_ns.class_("EmptyButton", button.Button, cg.Component)
 
 DISTANCE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
@@ -262,6 +269,16 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
         cv.Optional(CONF_MAX_DISTANCE_MARGIN, default="25cm"): cv.All(
             cv.distance, cv.Range(min=0.0, max=6.0)
         ),
+        cv.Optional(CONF_RESTART_BUTTON): button.button_schema(
+            EmptyButton,
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+            device_class=DEVICE_CLASS_RESTART,
+        ),
+        cv.Optional(CONF_FACTORY_RESET_BUTTON): button.button_schema(
+            EmptyButton,
+            entity_category=ENTITY_CATEGORY_CONFIG,
+            icon=ICON_RESTART_ALERT,
+        ),
         cv.Optional(CONF_MAX_DISTANCE): cv.Any(
             cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
             number.NUMBER_SCHEMA.extend(
@@ -346,6 +363,16 @@ def to_code(config):
         elif isinstance(max_distance_config, float):
             # Set fixed value from simple config
             cg.add(var.set_max_distance(max_distance_config))
+
+    # Add sensor restart button if present
+    if restart_config := config.get(CONF_RESTART_BUTTON):
+        restart_button = yield button.new_button(restart_config)
+        cg.add(var.set_restart_button(restart_button))
+
+    # Add sensor factory reset button if present
+    if reset_config := config.get(CONF_FACTORY_RESET_BUTTON):
+        reset_button = yield button.new_button(reset_config)
+        cg.add(var.set_factory_reset_button(reset_button))
 
 
 def target_to_code(config, user_index: int):

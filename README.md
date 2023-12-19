@@ -43,6 +43,8 @@ This is the most basic `useful` configuration. You can find [this](examples/basi
 - **max_distance_margin**(**Optional**, ): The margin which is added to the maximum allowed distance. Targets that are already being tracked, will still be tracked within the additional margin. This prevents on-off-flickering of related sensors. Defaults to `25cm`.
 - **occupancy**(**Optional**, binary sensor): A binary sensor, which will be triggered if at least one target is present. `id` or `name` required. All options from [Binary Sensor](https://esphome.io/components/binary_sensor/#config-binary-sensor).
 - **target_count**(**Optional**, sensor): A sensor that provides the number of currently tracked targets. `id` or `name` required. All options from [Sensor](https://esphome.io/components/sensor/#config-sensor).
+- **restart_button**(**Optional**, button): Restart the connected LD2450 Sensor.
+- **factory_reset_button**(**Optional**, button): Resets the connected LD2450 Sensor to it's factory default state and restarts the module.
 - **targets**(**Optional**, list of targets): A list of at most `3` Targets. Each target has its own configuration and sensors. See [Target](#target).
 - **zones**(**Optional**, list of zones): A list Zones. Each zone has its own configuration and sensors. See [Zone](#zone).
 

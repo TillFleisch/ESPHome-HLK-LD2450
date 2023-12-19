@@ -37,6 +37,14 @@ namespace esphome::ld2450
         if (occupancy_binary_sensor_ != nullptr)
             occupancy_binary_sensor_->publish_initial_state(false);
 #endif
+#ifdef USE_BUTTON
+        if (restart_button_ != nullptr)
+            restart_button_->add_on_press_callback([this]()
+                                                   { this->perform_restart(); });
+        if (factory_reset_button_ != nullptr)
+            factory_reset_button_->add_on_press_callback([this]()
+                                                         { this->perform_factory_reset(); });
+#endif
     }
 
     void LD2450::dump_config()
