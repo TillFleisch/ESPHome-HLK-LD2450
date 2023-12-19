@@ -15,6 +15,13 @@
 #include "esphome/components/number/number.h"
 #endif
 
+#define COMMAND_MAX_RETRIES 5
+#define COMMAND_RETRY_DELAY 100
+
+#define COMMAND_ENTER_CONFIG 0xFF
+#define COMMAND_LEAVE_CONFIG 0xFE
+#define COMMAND_READ_VERSION 0xA0
+
 namespace esphome::ld2450
 {
     /**
@@ -121,6 +128,15 @@ namespace esphome::ld2450
             return targets_[i];
         }
 
+        /**
+         * @brief Reads and logs the sensors version number.
+         */
+        void log_sensor_version()
+        {
+            uint8_t read_version[2] = {COMMAND_READ_VERSION, 0x00};
+            send_config_message(read_version, 2);
+        }
+
     protected:
         /**
          * @brief Parses the input message and updates related components.
@@ -129,8 +145,32 @@ namespace esphome::ld2450
          */
         void process_message(uint8_t *msg, int len);
 
-        /// @brief indicated whether the start sequence has been parsed
-        bool peek_status_ = false;
+        /**
+         * @brief Parses the input configuration-message and updates related components.
+         * @param msg Message buffer
+         * @param len Message length
+         */
+        void process_config_message(uint8_t *msg, int len);
+
+        /**
+         * @brief Generates message header/end and writes the command to UART
+         * @param msg command buffer
+         * @param len command length
+         */
+        void write_command(uint8_t *msg, int len);
+
+        /**
+         * @brief Submits a config message for being sent out. If the config command is not acknowledged after a fixed retry count, the command will be discarded.
+         * @param msg Message buffer
+         * @param msg Message length
+         */
+        void send_config_message(uint8_t *msg, int len)
+        {
+            command_queue_.push_back(std::vector<uint8_t>(msg, msg + len));
+        }
+
+        /// @brief indicates whether the start sequence has been parsed
+        uint8_t peek_status_ = 0;
 
         /// @brief Name of this component
         const char *name_ = "LD2450";
@@ -143,6 +183,21 @@ namespace esphome::ld2450
 
         /// @brief Determines whether the fast unoccupied detection method is applied
         bool fast_off_detection_ = false;
+
+        /// @brief Determines whether the sensor is in it's configuration mode
+        bool configuration_mode_ = false;
+
+        /// @brief Expected length of the configuration message
+        int configuration_message_length_ = 0;
+
+        /// @brief timestamp of the last message which was sent to the sensor
+        long command_last_sent_ = 0;
+
+        /// @brief Queue of commands to execute
+        std::vector<std::vector<uint8_t>> command_queue_;
+
+        /// @brief Nr of times the command has been written to UART
+        int command_send_retries_ = 0;
 
         /// @brief The maximum detection distance in mm
         int16_t max_detection_distance_ = 6000;

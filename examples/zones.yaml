@@ -8,6 +8,11 @@ uart:
     mode:
       input: true
       pullup: true
+  tx_pin: 
+    number: GPIO17
+    mode:
+      input: true
+      pullup: true
   baud_rate: 256000
   parity: NONE
   stop_bits: 1

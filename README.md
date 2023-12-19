@@ -35,7 +35,7 @@ This is the most basic `useful` configuration. You can find [this](examples/basi
 
 ### LD2450
 
-- **uart_id**(**Required**, string): ID of the UART-Component to the LD2450 Sensor. Note that only the RX ping is required.
+- **uart_id**(**Required**, string): ID of the UART-Component connected to the LD2450 Sensor.
 - **name**(**Optional**, string): The name of this sensor, which is used during logging. Defaults to `LD2450`.
 - **flip_x_axis**(**Optional**, boolean): If set to true, values along the X-axis will be flipped. Defaults to `false`.
 - **fast_off_detection**(**Optional**, boolean): If set to true, fast-away detection will be used for targets, which leave the visible range of the sensor. Defaults to `false`.
