@@ -34,6 +34,9 @@ LD2450:
   factory_reset_button:
     name: "Factory Reset Sensor"
 
+  tracking_mode_switch:
+    name: "Multiple Target Tracking"
+
   occupancy:
     name: Occupancy
   target_count:

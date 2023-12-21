@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart, binary_sensor, number, sensor, button
+from esphome.components import uart, binary_sensor, number, sensor, button, switch
 from esphome.components.uart import UARTComponent
 from esphome.const import (
     CONF_ID,
@@ -22,7 +22,7 @@ from esphome.const import (
     ENTITY_CATEGORY_CONFIG,
 )
 
-AUTO_LOAD = ["binary_sensor", "number", "sensor", "button"]
+AUTO_LOAD = ["binary_sensor", "number", "sensor", "button", "switch"]
 
 DEPENDENCIES = ["uart"]
 
@@ -53,8 +53,10 @@ CONF_X = "x"
 CONF_Y = "y"
 CONF_RESTART_BUTTON = "restart_button"
 CONF_FACTORY_RESET_BUTTON = "factory_reset_button"
+CONF_TRACKING_MODE_SWITCH = "tracking_mode_switch"
 UNIT_METER_PER_SECOND = "m/s"
 ICON_ANGLE_ACUTE = "mdi:angle-acute"
+ICON_ACCOUNT_GROUP = "mdi:account-group"
 
 ld2450_ns = cg.esphome_ns.namespace("ld2450")
 LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
@@ -63,6 +65,7 @@ MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 Zone = ld2450_ns.class_("Zone")
 EmptyButton = ld2450_ns.class_("EmptyButton", button.Button, cg.Component)
+TrackingModeSwitch = ld2450_ns.class_("TrackingModeSwitch", switch.Switch, cg.Component)
 
 DISTANCE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
@@ -279,6 +282,11 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
             entity_category=ENTITY_CATEGORY_CONFIG,
             icon=ICON_RESTART_ALERT,
         ),
+        cv.Optional(CONF_TRACKING_MODE_SWITCH): switch.switch_schema(
+            TrackingModeSwitch,
+            icon=ICON_ACCOUNT_GROUP,
+            entity_category=ENTITY_CATEGORY_CONFIG,
+        ),
         cv.Optional(CONF_MAX_DISTANCE): cv.Any(
             cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
             number.NUMBER_SCHEMA.extend(
@@ -373,6 +381,14 @@ def to_code(config):
     if reset_config := config.get(CONF_FACTORY_RESET_BUTTON):
         reset_button = yield button.new_button(reset_config)
         cg.add(var.set_factory_reset_button(reset_button))
+
+    # Add tracking mode switch
+    if tracking_mode_config := config.get(CONF_TRACKING_MODE_SWITCH):
+        mode_switch = cg.new_Pvariable(tracking_mode_config[CONF_ID])
+        yield cg.register_parented(mode_switch, config[CONF_ID])
+        yield cg.register_component(mode_switch, tracking_mode_config)
+        yield switch.register_switch(mode_switch, tracking_mode_config)
+        cg.add(var.set_tracking_mode_switch(mode_switch))
 
 
 def target_to_code(config, user_index: int):

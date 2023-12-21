@@ -42,9 +42,10 @@ This is the most basic `useful` configuration. You can find [this](examples/basi
 - **max_detection_distance**(**Optional**, number or distance): The furthest allowed detection distance. All targets further than this distance will not be tracked. Either a configuration for a number input or a fixed distance value. See: [Max Distance Number](#max-distance-number).
 - **max_distance_margin**(**Optional**, ): The margin which is added to the maximum allowed distance. Targets that are already being tracked, will still be tracked within the additional margin. This prevents on-off-flickering of related sensors. Defaults to `25cm`.
 - **occupancy**(**Optional**, binary sensor): A binary sensor, which will be triggered if at least one target is present. `id` or `name` required. All options from [Binary Sensor](https://esphome.io/components/binary_sensor/#config-binary-sensor).
-- **target_count**(**Optional**, sensor): A sensor that provides the number of currently tracked targets. `id` or `name` required. All options from [Sensor](https://esphome.io/components/sensor/#config-sensor).
-- **restart_button**(**Optional**, button): Restart the connected LD2450 Sensor.
-- **factory_reset_button**(**Optional**, button): Resets the connected LD2450 Sensor to it's factory default state and restarts the module.
+- **target_count**(**Optional**, sensor): A sensor that provides the number of currently tracked targets. `id` or `name` required. All other options from [Sensor](https://esphome.io/components/sensor/#config-sensor).
+- **restart_button**(**Optional**, button): Restart the connected LD2450 Sensor. All other options from [Button](https://esphome.io/components/button/#config-button).
+- **factory_reset_button**(**Optional**, button): Resets the connected LD2450 Sensor to it's factory default state and restarts the module. All other options from [Button](https://esphome.io/components/button/#config-button).
+- **tracking_mode_switch**(**Optional**, switch): Enables the multiple target tracking mode of the sensor. If disabled, only a single target will be tracked. All other options from [Switch](https://esphome.io/components/switch/#config-switch).
 - **targets**(**Optional**, list of targets): A list of at most `3` Targets. Each target has its own configuration and sensors. See [Target](#target).
 - **zones**(**Optional**, list of zones): A list Zones. Each zone has its own configuration and sensors. See [Zone](#zone).
 

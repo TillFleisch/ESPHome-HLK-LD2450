@@ -45,6 +45,8 @@ namespace esphome::ld2450
             factory_reset_button_->add_on_press_callback([this]()
                                                          { this->perform_factory_reset(); });
 #endif
+        // Acquire current switch states and update related components
+        read_switch_states();
     }
 
     void LD2450::dump_config()
@@ -60,6 +62,11 @@ namespace esphome::ld2450
 #ifdef USE_NUMBER
         LOG_NUMBER("  ", "MaxDistanceNumber", max_distance_number_);
 #endif
+#ifdef USE_BUTTON
+        LOG_BUTTON("  ", "RestartButton", restart_button_);
+        LOG_BUTTON("  ", "FactoryResetButton", factory_reset_button_);
+#endif
+        LOG_SWITCH("  ", "TrackingModeSwitch", tracking_mode_switch_);
         ESP_LOGCONFIG(TAG, "Zones:");
         if (zones_.size() > 0)
         {
@@ -249,7 +256,7 @@ namespace esphome::ld2450
             configuration_mode_ = true;
         }
 
-        if (msg[0] == COMMAND_LEAVE_CONFIG && msg[1] == true)
+        if ((msg[0] == COMMAND_LEAVE_CONFIG || msg[0] == COMMAND_RESTART) && msg[1] == true)
         {
             configuration_mode_ = false;
         }
@@ -257,6 +264,13 @@ namespace esphome::ld2450
         if (msg[0] == COMMAND_READ_VERSION && msg[1] == true)
         {
             ESP_LOGI(TAG, "Sensor Firmware-Version: V%X.%02X.%02X%02X%02X%02X", msg[7], msg[6], msg[11], msg[10], msg[9], msg[8]);
+        }
+
+        if (msg[0] == COMMAND_READ_TRACKING_MODE && msg[1] == true)
+        {
+            bool multi_tracking_state = msg[4] == 0x02;
+            if (tracking_mode_switch_ != nullptr)
+                tracking_mode_switch_->publish_state(multi_tracking_state);
         }
     }
 

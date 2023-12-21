@@ -5,6 +5,7 @@
 #include "esphome/core/helpers.h"
 #include "target.h"
 #include "zone.h"
+#include "tracking_mode_switch.h"
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
@@ -27,8 +28,14 @@
 #define COMMAND_RESTART 0xA3
 #define COMMAND_FACTORY_RESET 0xA2
 
+#define COMMAND_READ_TRACKING_MODE 0x91
+#define COMMAND_SINGLE_TRACKING_MODE 0x80
+#define COMMAND_MULTI_TRACKING_MODE 0x90
+
 namespace esphome::ld2450
 {
+    class TrackingModeSwitch;
+
     /**
      * @brief Empty button definition used as a template for the restart and factory reset buttons.
      */
@@ -127,6 +134,16 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Set the tracking mode switch for this sensor
+         *
+         * @param switch_ switch reference
+         */
+        void set_tracking_mode_switch(TrackingModeSwitch *switch_)
+        {
+            tracking_mode_switch_ = switch_;
+        }
+
+        /**
          * @brief Gets the occupancy status of this LD2450 sensor.
          * @return true if at least one target is present, false otherwise
          */
@@ -151,7 +168,7 @@ namespace esphome::ld2450
          */
         void log_sensor_version()
         {
-            uint8_t read_version[2] = {COMMAND_READ_VERSION, 0x00};
+            const uint8_t read_version[2] = {COMMAND_READ_VERSION, 0x00};
             send_config_message(read_version, 2);
         }
 
@@ -160,8 +177,9 @@ namespace esphome::ld2450
          */
         void perform_restart()
         {
-            uint8_t restart[2] = {COMMAND_RESTART, 0x00};
+            const uint8_t restart[2] = {COMMAND_RESTART, 0x00};
             send_config_message(restart, 2);
+            read_switch_states();
         }
 
         /**
@@ -169,9 +187,41 @@ namespace esphome::ld2450
          */
         void perform_factory_reset()
         {
-            uint8_t reset[2] = {COMMAND_FACTORY_RESET, 0x00};
+            const uint8_t reset[2] = {COMMAND_FACTORY_RESET, 0x00};
             send_config_message(reset, 2);
             perform_restart();
+        }
+
+        /**
+         * @brief Set the sensors target tracking mode
+         *
+         * @param mode true for multi target mode, false for single target tracking mode
+         */
+        void set_tracking_mode(bool mode)
+        {
+            if (mode)
+            {
+                const uint8_t set_tracking_mode[2] = {COMMAND_MULTI_TRACKING_MODE, 0x00};
+                send_config_message(set_tracking_mode, 2);
+            }
+            else
+            {
+                const uint8_t set_tracking_mode[2] = {COMMAND_SINGLE_TRACKING_MODE, 0x00};
+                send_config_message(set_tracking_mode, 2);
+            }
+
+            const uint8_t request_tracking_mode[2] = {COMMAND_READ_TRACKING_MODE, 0x00};
+            send_config_message(request_tracking_mode, 2);
+        }
+
+        /**
+         * @brief Requests the state of switches from the sensor.
+         *
+         */
+        void read_switch_states()
+        {
+            const uint8_t request_tracking_mode[2] = {COMMAND_READ_TRACKING_MODE, 0x00};
+            send_config_message(request_tracking_mode, 2);
         }
 
     protected:
@@ -201,7 +251,7 @@ namespace esphome::ld2450
          * @param msg Message buffer
          * @param msg Message length
          */
-        void send_config_message(uint8_t *msg, int len)
+        void send_config_message(const uint8_t *msg, int len)
         {
             command_queue_.push_back(std::vector<uint8_t>(msg, msg + len));
         }
@@ -247,5 +297,8 @@ namespace esphome::ld2450
 
         /// @brief List of registered zones
         std::vector<Zone *> zones_;
+
+        /// @brief Tracking mode switch which enables/disables multi-target tracking
+        TrackingModeSwitch *tracking_mode_switch_ = nullptr;
     };
 }
