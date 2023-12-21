@@ -312,6 +312,63 @@ namespace esphome::ld2450
         }
     }
 
+    void LD2450::log_sensor_version()
+    {
+        const uint8_t read_version[2] = {COMMAND_READ_VERSION, 0x00};
+        send_config_message(read_version, 2);
+    }
+
+    void LD2450::log_bluetooth_mac()
+    {
+        const uint8_t read_mac[4] = {COMMAND_READ_MAC, 0x00, 0x01, 0x00};
+        send_config_message(read_mac, 4);
+    }
+
+    void LD2450::perform_restart()
+    {
+        const uint8_t restart[2] = {COMMAND_RESTART, 0x00};
+        send_config_message(restart, 2);
+        read_switch_states();
+    }
+
+    void LD2450::perform_factory_reset()
+    {
+        const uint8_t reset[2] = {COMMAND_FACTORY_RESET, 0x00};
+        send_config_message(reset, 2);
+        perform_restart();
+    }
+
+    void LD2450::set_tracking_mode(bool mode)
+    {
+        if (mode)
+        {
+            const uint8_t set_tracking_mode[2] = {COMMAND_MULTI_TRACKING_MODE, 0x00};
+            send_config_message(set_tracking_mode, 2);
+        }
+        else
+        {
+            const uint8_t set_tracking_mode[2] = {COMMAND_SINGLE_TRACKING_MODE, 0x00};
+            send_config_message(set_tracking_mode, 2);
+        }
+
+        const uint8_t request_tracking_mode[2] = {COMMAND_READ_TRACKING_MODE, 0x00};
+        send_config_message(request_tracking_mode, 2);
+    }
+
+    void LD2450::set_bluetooth_state(bool state)
+    {
+        const uint8_t set_bt[4] = {COMMAND_BLUETOOTH, 0x00, state, 0x00};
+        send_config_message(set_bt, 4);
+        perform_restart();
+    }
+
+    void LD2450::read_switch_states()
+    {
+        const uint8_t request_tracking_mode[2] = {COMMAND_READ_TRACKING_MODE, 0x00};
+        send_config_message(request_tracking_mode, 2);
+        log_bluetooth_mac();
+    }
+
     void LD2450::write_command(uint8_t *msg, int len)
     {
         // Write frame header
