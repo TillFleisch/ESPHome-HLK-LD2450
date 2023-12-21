@@ -67,6 +67,7 @@ namespace esphome::ld2450
         LOG_BUTTON("  ", "FactoryResetButton", factory_reset_button_);
 #endif
         LOG_SWITCH("  ", "TrackingModeSwitch", tracking_mode_switch_);
+        LOG_SWITCH("  ", "BluetoothSwitch", bluetooth_switch_);
         ESP_LOGCONFIG(TAG, "Zones:");
         if (zones_.size() > 0)
         {
@@ -78,6 +79,7 @@ namespace esphome::ld2450
 
         // Read and log Firmware-version
         log_sensor_version();
+        log_bluetooth_mac();
     }
 
     const uint8_t update_header[4] = {0xAA, 0xFF, 0x03, 0x00};
@@ -266,21 +268,40 @@ namespace esphome::ld2450
             configuration_mode_ = false;
 
             // Wait for sensor to restart and apply configuration before requesting switch states
-            if (is_factory_resetting_)
+            if (is_applying_changes_)
             {
                 delay(1500);
-                is_factory_resetting_ = false;
+                is_applying_changes_ = false;
             }
         }
 
-        if (msg[0] == COMMAND_FACTORY_RESET && msg[1] == true)
+        if ((msg[0] == COMMAND_FACTORY_RESET || msg[0] == COMMAND_BLUETOOTH) && msg[1] == true)
         {
-            is_factory_resetting_ = true;
+            is_applying_changes_ = true;
         }
 
         if (msg[0] == COMMAND_READ_VERSION && msg[1] == true)
         {
             ESP_LOGI(TAG, "Sensor Firmware-Version: V%X.%02X.%02X%02X%02X%02X", msg[7], msg[6], msg[11], msg[10], msg[9], msg[8]);
+        }
+
+        if (msg[0] == COMMAND_READ_MAC && msg[1] == true)
+        {
+
+            bool bt_enabled = !(msg[4] == 0x08 && msg[5] == 0x05 && msg[6] == 0x04 && msg[7] == 0x03 && msg[8] == 0x02 && msg[9] == 0x01);
+            if (bluetooth_switch_ != nullptr)
+            {
+                bluetooth_switch_->publish_state(bt_enabled);
+            }
+
+            if (bt_enabled)
+            {
+                ESP_LOGI(TAG, "Sensor MAC-Address: %02X:%02X:%02X:%02X:%02X:%02X", msg[4], msg[5], msg[6], msg[7], msg[8], msg[9]);
+            }
+            else
+            {
+                ESP_LOGI(TAG, "Sensor MAC-Address: Bluetooth disabled!");
+            }
         }
 
         if (msg[0] == COMMAND_READ_TRACKING_MODE && msg[1] == true)

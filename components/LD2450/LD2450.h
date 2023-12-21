@@ -6,6 +6,7 @@
 #include "target.h"
 #include "zone.h"
 #include "tracking_mode_switch.h"
+#include "bluetooth_switch.h"
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
@@ -32,9 +33,13 @@
 #define COMMAND_SINGLE_TRACKING_MODE 0x80
 #define COMMAND_MULTI_TRACKING_MODE 0x90
 
+#define COMMAND_READ_MAC 0xA5
+#define COMMAND_BLUETOOTH 0xA4
+
 namespace esphome::ld2450
 {
     class TrackingModeSwitch;
+    class BluetoothSwitch;
 
     /**
      * @brief Empty button definition used as a template for the restart and factory reset buttons.
@@ -144,6 +149,16 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Set the bluetooth switch for this sensor
+         *
+         * @param switch_ switch reference
+         */
+        void set_bluetooth_switch(BluetoothSwitch *switch_)
+        {
+            bluetooth_switch_ = switch_;
+        }
+
+        /**
          * @brief Gets the occupancy status of this LD2450 sensor.
          * @return true if at least one target is present, false otherwise
          */
@@ -170,6 +185,15 @@ namespace esphome::ld2450
         {
             const uint8_t read_version[2] = {COMMAND_READ_VERSION, 0x00};
             send_config_message(read_version, 2);
+        }
+
+        /**
+         * @brief Reads and logs the sensors mac address.
+         */
+        void log_bluetooth_mac()
+        {
+            const uint8_t read_mac[4] = {COMMAND_READ_MAC, 0x00, 0x01, 0x00};
+            send_config_message(read_mac, 4);
         }
 
         /**
@@ -215,6 +239,18 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Set the bluetooth state on the sensor
+         *
+         * @param state true if bluetooth should be enabled, false otherwise
+         */
+        void set_bluetooth_state(bool state)
+        {
+            const uint8_t set_bt[4] = {COMMAND_BLUETOOTH, 0x00, state, 0x00};
+            send_config_message(set_bt, 4);
+            perform_restart();
+        }
+
+        /**
          * @brief Requests the state of switches from the sensor.
          *
          */
@@ -222,6 +258,7 @@ namespace esphome::ld2450
         {
             const uint8_t request_tracking_mode[2] = {COMMAND_READ_TRACKING_MODE, 0x00};
             send_config_message(request_tracking_mode, 2);
+            log_bluetooth_mac();
         }
 
     protected:
@@ -275,7 +312,7 @@ namespace esphome::ld2450
         bool configuration_mode_ = false;
 
         /// @brief Indicated that the sensor is currently factory resetting
-        bool is_factory_resetting_ = false;
+        bool is_applying_changes_ = false;
 
         /// @brief Expected length of the configuration message
         int configuration_message_length_ = 0;
@@ -303,5 +340,8 @@ namespace esphome::ld2450
 
         /// @brief Tracking mode switch which enables/disables multi-target tracking
         TrackingModeSwitch *tracking_mode_switch_ = nullptr;
+
+        /// @brief Sensor Bluetooth switch which enables/disables bluetooth on the sensor
+        BluetoothSwitch *bluetooth_switch_ = nullptr;
     };
 }

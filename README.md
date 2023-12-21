@@ -46,6 +46,7 @@ This is the most basic `useful` configuration. You can find [this](examples/basi
 - **restart_button**(**Optional**, button): Restart the connected LD2450 Sensor. All other options from [Button](https://esphome.io/components/button/#config-button).
 - **factory_reset_button**(**Optional**, button): Resets the connected LD2450 Sensor to it's factory default state and restarts the module. All other options from [Button](https://esphome.io/components/button/#config-button).
 - **tracking_mode_switch**(**Optional**, switch): Enables the multiple target tracking mode of the sensor. If disabled, only a single target will be tracked. All other options from [Switch](https://esphome.io/components/switch/#config-switch).
+- **bluetooth_switch**(**Optional**, switch): Enables or disables bluetooth on the LD2450 Sensor. All other options from [Switch](https://esphome.io/components/switch/#config-switch).
 - **targets**(**Optional**, list of targets): A list of at most `3` Targets. Each target has its own configuration and sensors. See [Target](#target).
 - **zones**(**Optional**, list of zones): A list Zones. Each zone has its own configuration and sensors. See [Zone](#zone).
 

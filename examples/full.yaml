@@ -36,6 +36,8 @@ LD2450:
 
   tracking_mode_switch:
     name: "Multiple Target Tracking"
+  bluetooth_switch:
+    name: "Sensor Bluetooth"
 
   occupancy:
     name: Occupancy

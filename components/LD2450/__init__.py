@@ -18,6 +18,7 @@ from esphome.const import (
     DEVICE_CLASS_RESTART,
     STATE_CLASS_MEASUREMENT,
     ICON_RESTART_ALERT,
+    ICON_BLUETOOTH,
     ENTITY_CATEGORY_DIAGNOSTIC,
     ENTITY_CATEGORY_CONFIG,
 )
@@ -54,6 +55,7 @@ CONF_Y = "y"
 CONF_RESTART_BUTTON = "restart_button"
 CONF_FACTORY_RESET_BUTTON = "factory_reset_button"
 CONF_TRACKING_MODE_SWITCH = "tracking_mode_switch"
+CONF_BLUETOOTH_SWITCH = "bluetooth_switch"
 UNIT_METER_PER_SECOND = "m/s"
 ICON_ANGLE_ACUTE = "mdi:angle-acute"
 ICON_ACCOUNT_GROUP = "mdi:account-group"
@@ -66,6 +68,7 @@ PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 Zone = ld2450_ns.class_("Zone")
 EmptyButton = ld2450_ns.class_("EmptyButton", button.Button, cg.Component)
 TrackingModeSwitch = ld2450_ns.class_("TrackingModeSwitch", switch.Switch, cg.Component)
+BluetoothSwitch = ld2450_ns.class_("BluetoothSwitch", switch.Switch, cg.Component)
 
 DISTANCE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
@@ -287,6 +290,11 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
             icon=ICON_ACCOUNT_GROUP,
             entity_category=ENTITY_CATEGORY_CONFIG,
         ),
+        cv.Optional(CONF_BLUETOOTH_SWITCH): switch.switch_schema(
+            BluetoothSwitch,
+            icon=ICON_BLUETOOTH,
+            entity_category=ENTITY_CATEGORY_CONFIG,
+        ),
         cv.Optional(CONF_MAX_DISTANCE): cv.Any(
             cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
             number.NUMBER_SCHEMA.extend(
@@ -389,6 +397,14 @@ def to_code(config):
         yield cg.register_component(mode_switch, tracking_mode_config)
         yield switch.register_switch(mode_switch, tracking_mode_config)
         cg.add(var.set_tracking_mode_switch(mode_switch))
+
+    # Add bluetooth switch
+    if bluetooth_config := config.get(CONF_BLUETOOTH_SWITCH):
+        bluetooth_switch = cg.new_Pvariable(bluetooth_config[CONF_ID])
+        yield cg.register_parented(bluetooth_switch, config[CONF_ID])
+        yield cg.register_component(bluetooth_switch, bluetooth_config)
+        yield switch.register_switch(bluetooth_switch, bluetooth_config)
+        cg.add(var.set_bluetooth_switch(bluetooth_switch))
 
 
 def target_to_code(config, user_index: int):
