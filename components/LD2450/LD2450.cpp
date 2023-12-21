@@ -9,8 +9,6 @@ namespace esphome::ld2450
     void LD2450::setup()
     {
 
-        check_uart_settings(256000, 1, uart::UART_CONFIG_PARITY_NONE, 8);
-
         // Fill target list with mock targets if not present
         for (int i = targets_.size(); i < 3; i++)
         {
@@ -68,6 +66,7 @@ namespace esphome::ld2450
 #endif
         LOG_SWITCH("  ", "TrackingModeSwitch", tracking_mode_switch_);
         LOG_SWITCH("  ", "BluetoothSwitch", bluetooth_switch_);
+        LOG_SELECT("  ", "BaudRateSelect", baud_rate_select_);
         ESP_LOGCONFIG(TAG, "Zones:");
         if (zones_.size() > 0)
         {
@@ -367,6 +366,13 @@ namespace esphome::ld2450
         const uint8_t request_tracking_mode[2] = {COMMAND_READ_TRACKING_MODE, 0x00};
         send_config_message(request_tracking_mode, 2);
         log_bluetooth_mac();
+    }
+
+    void LD2450::set_baud_rate(BaudRate baud_rate)
+    {
+        const uint8_t set_baud_rate[4] = {COMMAND_SET_BAUD_RATE, 0x00, baud_rate, 0x00};
+        send_config_message(set_baud_rate, 4);
+        perform_restart();
     }
 
     void LD2450::write_command(uint8_t *msg, int len)

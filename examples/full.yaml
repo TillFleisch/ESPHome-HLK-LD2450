@@ -39,6 +39,9 @@ LD2450:
   bluetooth_switch:
     name: "Sensor Bluetooth"
 
+  baud_rate_select:
+    name: "Sensor Baud Rate"
+
   occupancy:
     name: Occupancy
   target_count:

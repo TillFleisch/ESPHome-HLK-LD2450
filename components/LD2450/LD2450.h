@@ -7,6 +7,7 @@
 #include "zone.h"
 #include "tracking_mode_switch.h"
 #include "bluetooth_switch.h"
+#include "baud_rate_select.h"
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
@@ -36,10 +37,36 @@
 #define COMMAND_READ_MAC 0xA5
 #define COMMAND_BLUETOOTH 0xA4
 
+#define COMMAND_SET_BAUD_RATE 0xA1
+
 namespace esphome::ld2450
 {
+
+    enum BaudRate
+    {
+        BAUD_9600 = 0x01,
+        BAUD_19200 = 0x02,
+        BAUD_38400 = 0x03,
+        BAUD_57600 = 0x04,
+        BAUD_115200 = 0x05,
+        BAUD_230400 = 0x06,
+        BAUD_256000 = 0x07,
+        BAUD_460800 = 0x08,
+    };
+
+    static const std::map<std::string, BaudRate> BAUD_STRING_TO_ENUM{
+        {"9600", BAUD_9600},
+        {"19200", BAUD_19200},
+        {"38400", BAUD_38400},
+        {"57600", BAUD_57600},
+        {"115200", BAUD_115200},
+        {"230400", BAUD_230400},
+        {"256000", BAUD_256000},
+        {"460800", BAUD_460800}};
+
     class TrackingModeSwitch;
     class BluetoothSwitch;
+    class BaudRateSelect;
 
     /**
      * @brief Empty button definition used as a template for the restart and factory reset buttons.
@@ -159,6 +186,16 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Set the baud rate selector reference on this sensor
+         *
+         * @param select select component reference
+         */
+        void set_baud_rate_select(BaudRateSelect *select)
+        {
+            baud_rate_select_ = select;
+        }
+
+        /**
          * @brief Gets the occupancy status of this LD2450 sensor.
          * @return true if at least one target is present, false otherwise
          */
@@ -217,6 +254,13 @@ namespace esphome::ld2450
          *
          */
         void read_switch_states();
+
+        /**
+         * @brief Set the sensors baud rate
+         *
+         * @param baud_rate New Baud Rate
+         */
+        void set_baud_rate(BaudRate baud_rate);
 
     protected:
         /**
@@ -300,5 +344,8 @@ namespace esphome::ld2450
 
         /// @brief Sensor Bluetooth switch which enables/disables bluetooth on the sensor
         BluetoothSwitch *bluetooth_switch_ = nullptr;
+
+        /// @brief Select options used for setting the sensors baud rate
+        BaudRateSelect *baud_rate_select_ = nullptr;
     };
 }
