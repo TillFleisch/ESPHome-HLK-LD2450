@@ -274,6 +274,9 @@ namespace esphome::ld2450
         /// @brief Determines whether the sensor is in it's configuration mode
         bool configuration_mode_ = false;
 
+        /// @brief Indicated that the sensor is currently factory resetting
+        bool is_factory_resetting_ = false;
+
         /// @brief Expected length of the configuration message
         int configuration_message_length_ = 0;
 

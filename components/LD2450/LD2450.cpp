@@ -256,9 +256,26 @@ namespace esphome::ld2450
             configuration_mode_ = true;
         }
 
-        if ((msg[0] == COMMAND_LEAVE_CONFIG || msg[0] == COMMAND_RESTART) && msg[1] == true)
+        if (msg[0] == COMMAND_LEAVE_CONFIG && msg[1] == true)
         {
             configuration_mode_ = false;
+        }
+
+        if (msg[0] == COMMAND_RESTART && msg[1] == true)
+        {
+            configuration_mode_ = false;
+
+            // Wait for sensor to restart and apply configuration before requesting switch states
+            if (is_factory_resetting_)
+            {
+                delay(1500);
+                is_factory_resetting_ = false;
+            }
+        }
+
+        if (msg[0] == COMMAND_FACTORY_RESET && msg[1] == true)
+        {
+            is_factory_resetting_ = true;
         }
 
         if (msg[0] == COMMAND_READ_VERSION && msg[1] == true)
