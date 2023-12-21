@@ -408,7 +408,6 @@ def to_code(config):
     if tracking_mode_config := config.get(CONF_TRACKING_MODE_SWITCH):
         mode_switch = cg.new_Pvariable(tracking_mode_config[CONF_ID])
         yield cg.register_parented(mode_switch, config[CONF_ID])
-        yield cg.register_component(mode_switch, tracking_mode_config)
         yield switch.register_switch(mode_switch, tracking_mode_config)
         cg.add(var.set_tracking_mode_switch(mode_switch))
 
@@ -416,7 +415,6 @@ def to_code(config):
     if bluetooth_config := config.get(CONF_BLUETOOTH_SWITCH):
         bluetooth_switch = cg.new_Pvariable(bluetooth_config[CONF_ID])
         yield cg.register_parented(bluetooth_switch, config[CONF_ID])
-        yield cg.register_component(bluetooth_switch, bluetooth_config)
         yield switch.register_switch(bluetooth_switch, bluetooth_config)
         cg.add(var.set_bluetooth_switch(bluetooth_switch))
 
