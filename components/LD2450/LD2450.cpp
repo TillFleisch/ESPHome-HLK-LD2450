@@ -101,8 +101,22 @@ namespace esphome::ld2450
                 // Remove command form queue after max retries
                 if (command_send_retries_ >= COMMAND_MAX_RETRIES)
                 {
-                    command_queue_.erase(command_queue_.begin());
-                    command_send_retries_ = 0;
+                    if (command_queue_.front()[0] == COMMAND_LEAVE_CONFIG)
+                    {
+                        // Leave config mode to prevent re-adding the command to the queue (assume config mode already exited)
+                        configuration_mode_ = false;
+                    }
+                    else if (command_queue_.front()[0] == COMMAND_ENTER_CONFIG)
+                    {
+                        // Clear command queue in case entering config mode failed
+                        command_queue_.clear();
+                        ESP_LOGW(TAG, "Entering config mode failed, clearing command queue.");
+                    }
+                    else
+                    {
+                        command_queue_.erase(command_queue_.begin());
+                        command_send_retries_ = 0;
+                    }
                     ESP_LOGW(TAG, "Sending command timed out! Is the sensor connected?");
                 }
                 else
