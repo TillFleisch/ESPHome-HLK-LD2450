@@ -159,4 +159,4 @@ namespace esphome::ld2450
         }
         return true;
     }
-}
+} // namespace esphome::ld2450

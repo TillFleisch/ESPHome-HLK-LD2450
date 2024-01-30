@@ -229,4 +229,4 @@ namespace esphome::ld2450
         /// @brief sensor reference of the distance sensor
         PollingSensor *distance_sensor_ = nullptr;
     };
-}
+} // namespace esphome::ld2450

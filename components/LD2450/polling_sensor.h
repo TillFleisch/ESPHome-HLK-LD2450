@@ -46,4 +46,4 @@ namespace esphome::ld2450
         /// @brief Value of this sensor (un-published)
         float value_ = 0;
     };
-}
+} // namespace esphome::ld2450

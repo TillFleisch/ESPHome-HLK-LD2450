@@ -406,4 +406,4 @@ namespace esphome::ld2450
 
         flush();
     }
-}
+} // namespace esphome::ld2450

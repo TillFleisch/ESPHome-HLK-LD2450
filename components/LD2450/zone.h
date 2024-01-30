@@ -15,8 +15,14 @@ namespace esphome::ld2450
     class Point
     {
     public:
-        Point() : x(0), y(0) {}
-        Point(int x, int y) : x(x), y(y) {}
+        Point()
+            : x(0), y(0)
+        {
+        }
+        Point(int x, int y)
+            : x(x), y(y)
+        {
+        }
         int x, y;
     };
 
@@ -138,4 +144,4 @@ namespace esphome::ld2450
         /// @brief Map of targets which are currently tracked inside of this polygon with their last seen timestamp
         std::map<Target *, long> tracked_targets_{};
     };
-}
+} // namespace esphome::ld2450

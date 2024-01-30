@@ -50,4 +50,4 @@ namespace esphome::ld2450
         ESPPreferenceObject pref_;
     };
 
-}
+} // namespace esphome::ld2450
