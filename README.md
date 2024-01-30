@@ -1,4 +1,4 @@
-# ESPHome Hi-Link HKL-LD2450
+# ESPHome Hi-Link HKL-LD2450 [![CI](https://github.com/TillFleisch/ESPHome-HLK-LD2450/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/TillFleisch/ESPHome-HLK-LD2450/actions/workflows/ci.yaml)
 
 This external [ESPHome](https://esphome.io) component adds support for the [Hi-Link HKL-LD2450](https://www.hlktech.net/index.php?id=1157) Human presence sensor to ESPHome.
 In addition to a basic binary presence sensor, this component adds various different sensors for each detected target and supports custom presence detection Zones.

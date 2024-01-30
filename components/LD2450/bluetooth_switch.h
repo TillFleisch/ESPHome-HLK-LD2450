@@ -16,4 +16,4 @@ namespace esphome::ld2450
         void write_state(bool state) override;
     };
 
-}
+} // namespace esphome::ld2450

@@ -72,4 +72,4 @@ namespace esphome::ld2450
         return resolution_ != 0 && (!fast_off_detection_ || millis() - last_change_ <= FAST_OFF_THRESHOLD);
     }
 
-}
+} // namespace esphome::ld2450

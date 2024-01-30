@@ -348,4 +348,4 @@ namespace esphome::ld2450
         /// @brief Select options used for setting the sensors baud rate
         BaudRateSelect *baud_rate_select_ = nullptr;
     };
-}
+} // namespace esphome::ld2450

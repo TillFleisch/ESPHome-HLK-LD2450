@@ -1,34 +1,34 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import (
-    uart,
     binary_sensor,
-    number,
-    sensor,
     button,
-    switch,
+    number,
     select,
+    sensor,
+    switch,
+    uart,
 )
 from esphome.components.uart import UARTComponent
 from esphome.const import (
     CONF_ID,
-    CONF_NAME,
-    CONF_STEP,
-    CONF_RESTORE_VALUE,
     CONF_INITIAL_VALUE,
+    CONF_NAME,
+    CONF_RESTORE_VALUE,
+    CONF_STEP,
     CONF_UNIT_OF_MEASUREMENT,
-    UNIT_METER,
+    DEVICE_CLASS_DISTANCE,
+    DEVICE_CLASS_OCCUPANCY,
+    DEVICE_CLASS_RESTART,
+    DEVICE_CLASS_SPEED,
+    ENTITY_CATEGORY_CONFIG,
+    ENTITY_CATEGORY_DIAGNOSTIC,
+    ICON_BLUETOOTH,
+    ICON_RESTART_ALERT,
+    STATE_CLASS_MEASUREMENT,
     UNIT_CENTIMETER,
     UNIT_DEGREES,
-    DEVICE_CLASS_OCCUPANCY,
-    DEVICE_CLASS_DISTANCE,
-    DEVICE_CLASS_SPEED,
-    DEVICE_CLASS_RESTART,
-    STATE_CLASS_MEASUREMENT,
-    ICON_RESTART_ALERT,
-    ICON_BLUETOOTH,
-    ENTITY_CATEGORY_DIAGNOSTIC,
-    ENTITY_CATEGORY_CONFIG,
+    UNIT_METER,
 )
 
 AUTO_LOAD = ["binary_sensor", "number", "sensor", "button", "switch", "select"]

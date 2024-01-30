@@ -27,4 +27,4 @@ namespace esphome::ld2450
         if (this->restore_value_)
             this->pref_.save(&value);
     }
-}
+} // namespace esphome::ld2450

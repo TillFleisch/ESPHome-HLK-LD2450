@@ -16,4 +16,4 @@ namespace esphome::ld2450
         void control(const std::string &value);
     };
 
-}
+} // namespace esphome::ld2450

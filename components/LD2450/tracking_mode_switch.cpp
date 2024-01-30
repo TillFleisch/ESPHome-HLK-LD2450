@@ -6,4 +6,4 @@ namespace esphome::ld2450
     {
         parent_->set_tracking_mode(state);
     }
-}
+} // namespace esphome::ld2450

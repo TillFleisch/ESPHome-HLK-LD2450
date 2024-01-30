@@ -1,0 +1,143 @@
+esphome:
+  name: ld2450
+
+esp32:
+  board: esp32dev
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+
+logger:
+  baud_rate: 0
+
+uart:
+  id: uart_bus
+  rx_pin:
+    number: GPIO16
+    mode:
+      input: true
+      pullup: true
+  tx_pin:
+    number: GPIO17
+    mode:
+      input: true
+      pullup: true
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+  data_bits: 8
+
+LD2450:
+  uart_id: uart_bus
+  flip_x_axis: true
+  fast_off_detection: true
+  max_detection_distance:
+    name: "Max Distance"
+    initial_value: 4m
+  max_distance_margin: 30cm
+
+  restart_button:
+    name: "Restart Sensor"
+  factory_reset_button:
+    name: "Factory Reset Sensor"
+
+  tracking_mode_switch:
+    name: "Multiple Target Tracking"
+  bluetooth_switch:
+    name: "Sensor Bluetooth"
+
+  baud_rate_select:
+    name: "Sensor Baud Rate"
+
+  occupancy:
+    name: Occupancy
+  target_count:
+    name: Target Count
+
+  targets:
+    - target:
+        name: "T1"
+        id: t1
+        debug: true
+        x_position:
+          id: t1_xpos
+        y_position:
+          id: t1_ypos
+        speed:
+          id: t1_speed
+        distance_resolution:
+          id: t1_res
+        angle:
+          id: t1_angle
+        distance:
+          id: t1_distance
+    - target:
+        id: t2
+        x_position:
+          id: t2_xpos
+        y_position:
+          id: t2_ypos
+        speed:
+          id: t2_speed
+        distance_resolution:
+          id: t2_res
+        angle:
+          id: t2_angle
+        distance:
+          id: t2_distance
+    - target:
+        id: t3
+        x_position:
+          id: t3_xpos
+        y_position:
+          id: t3_ypos
+        speed:
+          id: t3_speed
+        distance_resolution:
+          id: t3_res
+        angle:
+          id: t3_angle
+        distance:
+          id: t3_distance
+  zones:
+    - zone:
+        name: "Office Right"
+        polygon:
+          - point:
+              x: 0m
+              y: 0m
+          - point:
+              x: 0m
+              y: 600cm
+          - point:
+              x: 6m
+              y: 6m
+          - point:
+              x: 6m
+              y: 0m
+        occupancy:
+          id: z1_occupancy
+        target_count:
+          id: z1_target_count
+    - zone:
+        name: "Office Left"
+        margin: 0.4m
+        polygon:
+          - point:
+              x: -0m
+              y: 0m
+          - point:
+              x: -0m
+              y: 6m
+          - point:
+              x: -6m
+              y: 6m
+          - point:
+              x: -6m
+              y: 0m
+        occupancy:
+          id: z2_occupancy
+        target_count:
+          id: z2_target_count

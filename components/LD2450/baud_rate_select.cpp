@@ -6,4 +6,4 @@ namespace esphome::ld2450
     {
         parent_->set_baud_rate(BAUD_STRING_TO_ENUM.at(value));
     }
-}
+} // namespace esphome::ld2450
