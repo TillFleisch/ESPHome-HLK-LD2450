@@ -74,8 +74,9 @@ namespace esphome::ld2450
         /**
          * @brief Updates sensors related to this zone.
          * @param targets Reference to a vector of targets which will be used for calculation
+         * @param available True if the sensor is currently available, false otherwise
          * */
-        void update(std::vector<Target *> &targets);
+        void update(std::vector<Target *> &targets, bool sensor_available);
 
         /**
          * Logs the Zone configuration.

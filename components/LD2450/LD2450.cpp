@@ -201,10 +201,25 @@ namespace esphome::ld2450
                 peek_status_ = 0;
             }
         }
+
+        if (sensor_available_ && millis() - last_message_received_ > SENSOR_UNAVAILABLE_TIMEOUT)
+        {
+            sensor_available_ = false;
+
+            ESP_LOGE(TAG, "LD2450-Sensor stopped sending updates!");
+
+            // Update zones and related components
+            for (Zone *zone : zones_)
+            {
+                zone->update(targets_, sensor_available_);
+            }
+        }
     }
 
     void LD2450::process_message(uint8_t *msg, int len)
     {
+        sensor_available_ = true;
+        last_message_received_ = millis();
         for (int i = 0; i < 3; i++)
         {
             int offset = 8 * i;
@@ -251,7 +266,7 @@ namespace esphome::ld2450
         // Update zones and related components
         for (Zone *zone : zones_)
         {
-            zone->update(targets_);
+            zone->update(targets_, sensor_available_);
         }
     }
 
