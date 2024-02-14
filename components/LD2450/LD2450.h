@@ -23,7 +23,7 @@
 
 #define SENSOR_UNAVAILABLE_TIMEOUT 1000
 
-#define COMMAND_MAX_RETRIES 5
+#define COMMAND_MAX_RETRIES 10
 #define COMMAND_RETRY_DELAY 100
 
 #define COMMAND_ENTER_CONFIG 0xFF
@@ -333,7 +333,7 @@ namespace esphome::ld2450
         int configuration_message_length_ = 0;
 
         /// @brief timestamp of the last message which was sent to the sensor
-        long command_last_sent_ = 0;
+        uint32_t command_last_sent_ = 0;
 
         /// @brief timestamp of the last received message
         uint32_t last_message_received_ = 0;

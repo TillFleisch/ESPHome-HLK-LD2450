@@ -143,6 +143,6 @@ namespace esphome::ld2450
         int target_timeout_ = 5000;
 
         /// @brief Map of targets which are currently tracked inside of this polygon with their last seen timestamp
-        std::map<Target *, long> tracked_targets_{};
+        std::map<Target *, uint32_t> tracked_targets_{};
     };
 } // namespace esphome::ld2450
