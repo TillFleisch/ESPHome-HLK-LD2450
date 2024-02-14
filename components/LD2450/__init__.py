@@ -31,6 +31,7 @@ from esphome.const import (
     UNIT_METER,
 )
 
+MULTI_CONF = True
 AUTO_LOAD = ["binary_sensor", "number", "sensor", "button", "switch", "select"]
 
 DEPENDENCIES = ["uart"]
