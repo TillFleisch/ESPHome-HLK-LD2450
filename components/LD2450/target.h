@@ -125,7 +125,7 @@ namespace esphome::ld2450
          * @brief Time since last last change in values.
          * @return timestamp in milliseconds since start
          */
-        long get_last_change()
+        uint32_t get_last_change()
         {
             return last_change_;
         }
@@ -206,10 +206,10 @@ namespace esphome::ld2450
         bool fast_off_detection_ = false;
 
         /// @brief time stamp of the last debug message which was sent.
-        long last_debug_message_ = 0;
+        uint32_t last_debug_message_ = 0;
 
         /// @brief time of the last value change
-        long last_change_ = 0;
+        uint32_t last_change_ = 0;
 
         /// @brief sensor reference of the x position sensor
         PollingSensor *x_position_sensor_ = nullptr;

@@ -21,7 +21,9 @@
 #include "esphome/components/button/button.h"
 #endif
 
-#define COMMAND_MAX_RETRIES 5
+#define SENSOR_UNAVAILABLE_TIMEOUT 1000
+
+#define COMMAND_MAX_RETRIES 10
 #define COMMAND_RETRY_DELAY 100
 
 #define COMMAND_ENTER_CONFIG 0xFF
@@ -216,6 +218,15 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Gets the state of the connected sensor
+         * @return True if the sensor is connected and communicating, False otherwise
+         */
+        bool is_sensor_available()
+        {
+            return sensor_available_;
+        }
+
+        /**
          * @brief Reads and logs the sensors version number.
          */
         void log_sensor_version();
@@ -315,11 +326,17 @@ namespace esphome::ld2450
         /// @brief Indicated that the sensor is currently factory resetting
         bool is_applying_changes_ = false;
 
+        /// @brief indicates if the sensor is communicating
+        bool sensor_available_ = false;
+
         /// @brief Expected length of the configuration message
         int configuration_message_length_ = 0;
 
         /// @brief timestamp of the last message which was sent to the sensor
-        long command_last_sent_ = 0;
+        uint32_t command_last_sent_ = 0;
+
+        /// @brief timestamp of the last received message
+        uint32_t last_message_received_ = 0;
 
         /// @brief Queue of commands to execute
         std::vector<std::vector<uint8_t>> command_queue_;

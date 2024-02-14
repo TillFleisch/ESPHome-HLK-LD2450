@@ -115,8 +115,8 @@ namespace esphome::ld2450
                     else
                     {
                         command_queue_.erase(command_queue_.begin());
-                        command_send_retries_ = 0;
                     }
+                    command_send_retries_ = 0;
                     ESP_LOGW(TAG, "Sending command timed out! Is the sensor connected?");
                 }
                 else
@@ -132,36 +132,41 @@ namespace esphome::ld2450
         {
             // Inject leave config command after clearing the queue
             command_queue_.push_back({COMMAND_LEAVE_CONFIG, 0x00});
+            command_send_retries_ = 0;
         }
 
         // Skip stream until start of message and parse header
-        while (!peek_status_ && available() >= 4)
+        if (!peek_status_ && available() >= 4)
         {
             // Try to read the header and abort on mismatch
             const uint8_t *header;
             bool skip = false;
-            uint8_t target;
-            if (peek() == update_header[0])
+            uint8_t message_type;
+            uint8_t first_byte = read();
+            if (first_byte == update_header[0])
             {
                 header = update_header;
-                target = 1;
+                message_type = 1;
+            }
+            else if (first_byte == config_header[0])
+            {
+                header = config_header;
+                message_type = 2;
             }
             else
             {
-                header = config_header;
-                target = 2;
+                skip = true;
             }
 
-            for (int i = 0; i < 4 && !skip; i++)
+            for (int i = 1; i < 4 && !skip; i++)
             {
                 if (read() != header[i])
                     skip = true;
             }
-            if (skip)
-                continue;
 
-            // Flag successful header reading
-            peek_status_ = target;
+            if (!skip)
+                // Flag successful header reading
+                peek_status_ = message_type;
         }
 
         if (peek_status_ == 1 && available() >= 28)
@@ -201,10 +206,25 @@ namespace esphome::ld2450
                 peek_status_ = 0;
             }
         }
+
+        if (sensor_available_ && millis() - last_message_received_ > SENSOR_UNAVAILABLE_TIMEOUT)
+        {
+            sensor_available_ = false;
+
+            ESP_LOGE(TAG, "LD2450-Sensor stopped sending updates!");
+
+            // Update zones and related components
+            for (Zone *zone : zones_)
+            {
+                zone->update(targets_, sensor_available_);
+            }
+        }
     }
 
     void LD2450::process_message(uint8_t *msg, int len)
     {
+        sensor_available_ = true;
+        last_message_received_ = millis();
         for (int i = 0; i < 3; i++)
         {
             int offset = 8 * i;
@@ -251,7 +271,7 @@ namespace esphome::ld2450
         // Update zones and related components
         for (Zone *zone : zones_)
         {
-            zone->update(targets_);
+            zone->update(targets_, sensor_available_);
         }
     }
 
@@ -396,7 +416,7 @@ namespace esphome::ld2450
 
         // Write message length
         write(static_cast<uint8_t>(len));
-        write(static_cast<uint8_t>(len << 8));
+        write(static_cast<uint8_t>(len >> 8));
 
         // Write message content
         write_array(msg, len);

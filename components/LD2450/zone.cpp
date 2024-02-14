@@ -39,8 +39,21 @@ namespace esphome::ld2450
 #endif
     }
 
-    void Zone::update(std::vector<Target *> &targets)
+    void Zone::update(std::vector<Target *> &targets, bool sensor_available)
     {
+        if (!sensor_available)
+        {
+#ifdef USE_BINARY_SENSOR
+            if (occupancy_binary_sensor_ != nullptr)
+                occupancy_binary_sensor_->publish_state(false);
+#endif
+#ifdef USE_SENSOR
+            if (target_count_sensor_ != nullptr)
+                target_count_sensor_->publish_state(NAN);
+#endif
+            return;
+        }
+
         if (polygon_.size() < 3)
             return;
 
