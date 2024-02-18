@@ -85,55 +85,61 @@ namespace esphome::ld2450
     const uint8_t config_header[4] = {0xFD, 0xFC, 0xFB, 0xFA};
     void LD2450::loop()
     {
-        // Process command queue
-        if (command_queue_.size() > 0)
+        // Only process commands if the sensor is not currently restarting / applying changes
+        if (!is_applying_changes_ || (is_applying_changes_ && millis() - apply_change_lockout_ > POST_RESTART_LOCKOUT_DELAY))
         {
-            // Inject enter config mode command if not in mode
-            if (!configuration_mode_ && command_queue_.front()[0] != COMMAND_ENTER_CONFIG)
-            {
-                command_queue_.insert(command_queue_.begin(), {COMMAND_ENTER_CONFIG, 0x00, 0x01, 0x00});
-            }
+            is_applying_changes_ = false;
 
-            // Wait before retransmitting
-            if (millis() - command_last_sent_ > COMMAND_RETRY_DELAY)
+            // Process command queue
+            if (command_queue_.size() > 0)
             {
-
-                // Remove command form queue after max retries
-                if (command_send_retries_ >= COMMAND_MAX_RETRIES)
+                // Inject enter config mode command if not in mode
+                if (!configuration_mode_ && command_queue_.front()[0] != COMMAND_ENTER_CONFIG)
                 {
-                    if (command_queue_.front()[0] == COMMAND_LEAVE_CONFIG)
+                    command_queue_.insert(command_queue_.begin(), {COMMAND_ENTER_CONFIG, 0x00, 0x01, 0x00});
+                }
+
+                // Wait before retransmitting
+                if (millis() - command_last_sent_ > COMMAND_RETRY_DELAY)
+                {
+
+                    // Remove command form queue after max retries
+                    if (command_send_retries_ >= COMMAND_MAX_RETRIES)
                     {
-                        // Leave config mode to prevent re-adding the command to the queue (assume config mode already exited)
-                        configuration_mode_ = false;
-                        command_queue_.erase(command_queue_.begin());
-                    }
-                    else if (command_queue_.front()[0] == COMMAND_ENTER_CONFIG)
-                    {
-                        // Clear command queue in case entering config mode failed
-                        command_queue_.clear();
-                        ESP_LOGW(TAG, "Entering config mode failed, clearing command queue.");
+                        if (command_queue_.front()[0] == COMMAND_LEAVE_CONFIG)
+                        {
+                            // Leave config mode to prevent re-adding the command to the queue (assume config mode already exited)
+                            configuration_mode_ = false;
+                            command_queue_.erase(command_queue_.begin());
+                        }
+                        else if (command_queue_.front()[0] == COMMAND_ENTER_CONFIG)
+                        {
+                            // Clear command queue in case entering config mode failed
+                            command_queue_.clear();
+                            ESP_LOGW(TAG, "Entering config mode failed, clearing command queue.");
+                        }
+                        else
+                        {
+                            command_queue_.erase(command_queue_.begin());
+                        }
+                        command_send_retries_ = 0;
+                        ESP_LOGW(TAG, "Sending command timed out! Is the sensor connected?");
                     }
                     else
                     {
-                        command_queue_.erase(command_queue_.begin());
+                        std::vector<uint8_t> command = command_queue_.front();
+                        write_command(&command[0], command.size());
+                        command_last_sent_ = millis();
+                        command_send_retries_++;
                     }
-                    command_send_retries_ = 0;
-                    ESP_LOGW(TAG, "Sending command timed out! Is the sensor connected?");
-                }
-                else
-                {
-                    std::vector<uint8_t> command = command_queue_.front();
-                    write_command(&command[0], command.size());
-                    command_last_sent_ = millis();
-                    command_send_retries_++;
                 }
             }
-        }
-        else if (configuration_mode_)
-        {
-            // Inject leave config command after clearing the queue
-            command_queue_.push_back({COMMAND_LEAVE_CONFIG, 0x00});
-            command_send_retries_ = 0;
+            else if (configuration_mode_)
+            {
+                // Inject leave config command after clearing the queue
+                command_queue_.push_back({COMMAND_LEAVE_CONFIG, 0x00});
+                command_send_retries_ = 0;
+            }
         }
 
         // Try to process as many messages as possible in a single iteration
@@ -242,7 +248,7 @@ namespace esphome::ld2450
 
         // Assume the sensor is in it's configuration mode, attempt to leave
         // Attempt to leave config mode periodically if the sensor is not sending updates
-        if (!sensor_available_ && millis() - last_config_leave_attempt_ > CONFIG_RECOVERY_INTERVAL)
+        if (!is_applying_changes_ && !sensor_available_ && millis() - last_config_leave_attempt_ > CONFIG_RECOVERY_INTERVAL)
         {
             ESP_LOGD(TAG, "Sensor is not sending updates, attempting to leave config mode.");
             last_config_leave_attempt_ = millis();
@@ -347,21 +353,13 @@ namespace esphome::ld2450
             configuration_mode_ = false;
         }
 
-        if (msg[0] == COMMAND_RESTART && msg[1] == true)
+        if ((msg[0] == COMMAND_FACTORY_RESET || msg[0] == COMMAND_RESTART) && msg[1] == true)
         {
             configuration_mode_ = false;
 
             // Wait for sensor to restart and apply configuration before requesting switch states
-            if (is_applying_changes_)
-            {
-                delay(1500);
-                is_applying_changes_ = false;
-            }
-        }
-
-        if ((msg[0] == COMMAND_FACTORY_RESET || msg[0] == COMMAND_BLUETOOTH) && msg[1] == true)
-        {
             is_applying_changes_ = true;
+            apply_change_lockout_ = millis();
         }
 
         if (msg[0] == COMMAND_READ_VERSION && msg[1] == true)

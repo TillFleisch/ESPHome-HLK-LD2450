@@ -23,6 +23,7 @@
 
 #define SENSOR_UNAVAILABLE_TIMEOUT 4000
 #define CONFIG_RECOVERY_INTERVAL 60000
+#define POST_RESTART_LOCKOUT_DELAY 2000
 
 #define COMMAND_MAX_RETRIES 10
 #define COMMAND_RETRY_DELAY 100
@@ -344,6 +345,9 @@ namespace esphome::ld2450
 
         /// @brief timestamp of the last attempt to leave config mode if it's not responding
         uint32_t last_config_leave_attempt_ = 0;
+
+        /// @brief timestamp of lockout period after applying changes requiring a restart
+        uint32_t apply_change_lockout_ = 0;
 
         /// @brief nr of available bytes during the last iteration
         int last_available_size_ = 0;
