@@ -105,6 +105,7 @@ namespace esphome::ld2450
                     {
                         // Leave config mode to prevent re-adding the command to the queue (assume config mode already exited)
                         configuration_mode_ = false;
+                        command_queue_.erase(command_queue_.begin());
                     }
                     else if (command_queue_.front()[0] == COMMAND_ENTER_CONFIG)
                     {
@@ -237,6 +238,18 @@ namespace esphome::ld2450
             {
                 target->clear();
             }
+        }
+
+        // Assume the sensor is in it's configuration mode, attempt to leave
+        // Attempt to leave config mode periodically if the sensor is not sending updates
+        if (!sensor_available_ && millis() - last_config_leave_attempt_ > CONFIG_RECOVERY_INTERVAL)
+        {
+            ESP_LOGD(TAG, "Sensor is not sending updates, attempting to leave config mode.");
+            last_config_leave_attempt_ = millis();
+            command_send_retries_ = 0;
+            configuration_mode_ = true;
+            command_queue_.clear();
+            command_queue_.push_back({COMMAND_LEAVE_CONFIG, 0x00});
         }
 
         if (available() != last_available_size_)
