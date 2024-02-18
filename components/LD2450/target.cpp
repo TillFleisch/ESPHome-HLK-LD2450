@@ -26,7 +26,8 @@ namespace esphome::ld2450
     {
         if (debug_)
         {
-            if (millis() - last_debug_message_ > DEBUG_FREQUENCY)
+            // Only show debug messages if updates are available
+            if (is_present() && millis() - last_debug_message_ > DEBUG_FREQUENCY)
             {
                 last_debug_message_ = millis();
                 std::string name = name_ != nullptr ? name_ : "Unnamed Target";
