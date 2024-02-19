@@ -85,138 +85,193 @@ namespace esphome::ld2450
     const uint8_t config_header[4] = {0xFD, 0xFC, 0xFB, 0xFA};
     void LD2450::loop()
     {
-        // Process command queue
-        if (command_queue_.size() > 0)
+        // Only process commands if the sensor is not currently restarting / applying changes
+        if (!is_applying_changes_ || (is_applying_changes_ && millis() - apply_change_lockout_ > POST_RESTART_LOCKOUT_DELAY))
         {
-            // Inject enter config mode command if not in mode
-            if (!configuration_mode_ && command_queue_.front()[0] != COMMAND_ENTER_CONFIG)
-            {
-                command_queue_.insert(command_queue_.begin(), {COMMAND_ENTER_CONFIG, 0x00, 0x01, 0x00});
-            }
+            is_applying_changes_ = false;
 
-            // Wait before retransmitting
-            if (millis() - command_last_sent_ > COMMAND_RETRY_DELAY)
+            // Process command queue
+            if (command_queue_.size() > 0)
             {
-
-                // Remove command form queue after max retries
-                if (command_send_retries_ >= COMMAND_MAX_RETRIES)
+                // Inject enter config mode command if not in mode
+                if (!configuration_mode_ && command_queue_.front()[0] != COMMAND_ENTER_CONFIG)
                 {
-                    if (command_queue_.front()[0] == COMMAND_LEAVE_CONFIG)
+                    command_queue_.insert(command_queue_.begin(), {COMMAND_ENTER_CONFIG, 0x00, 0x01, 0x00});
+                }
+
+                // Wait before retransmitting
+                if (millis() - command_last_sent_ > COMMAND_RETRY_DELAY)
+                {
+
+                    // Remove command form queue after max retries
+                    if (command_send_retries_ >= COMMAND_MAX_RETRIES)
                     {
-                        // Leave config mode to prevent re-adding the command to the queue (assume config mode already exited)
-                        configuration_mode_ = false;
-                    }
-                    else if (command_queue_.front()[0] == COMMAND_ENTER_CONFIG)
-                    {
-                        // Clear command queue in case entering config mode failed
-                        command_queue_.clear();
-                        ESP_LOGW(TAG, "Entering config mode failed, clearing command queue.");
+                        if (command_queue_.front()[0] == COMMAND_LEAVE_CONFIG)
+                        {
+                            // Leave config mode to prevent re-adding the command to the queue (assume config mode already exited)
+                            configuration_mode_ = false;
+                            command_queue_.erase(command_queue_.begin());
+                        }
+                        else if (command_queue_.front()[0] == COMMAND_ENTER_CONFIG)
+                        {
+                            // Clear command queue in case entering config mode failed
+                            command_queue_.clear();
+                            ESP_LOGW(TAG, "Entering config mode failed, clearing command queue.");
+                        }
+                        else
+                        {
+                            command_queue_.erase(command_queue_.begin());
+                        }
+                        command_send_retries_ = 0;
+                        ESP_LOGW(TAG, "Sending command timed out! Is the sensor connected?");
                     }
                     else
                     {
-                        command_queue_.erase(command_queue_.begin());
+                        std::vector<uint8_t> command = command_queue_.front();
+                        write_command(&command[0], command.size());
+                        command_last_sent_ = millis();
+                        command_send_retries_++;
                     }
-                    command_send_retries_ = 0;
-                    ESP_LOGW(TAG, "Sending command timed out! Is the sensor connected?");
+                }
+            }
+            else if (configuration_mode_)
+            {
+                // Inject leave config command after clearing the queue
+                command_queue_.push_back({COMMAND_LEAVE_CONFIG, 0x00});
+                command_send_retries_ = 0;
+            }
+        }
+
+        // Try to process as many messages as possible in a single iteration
+        bool processed_message = false;
+        do
+        {
+            processed_message = false;
+
+            // Skip stream until start of message and parse header
+            while (!peek_status_ && available() >= 4)
+            {
+                // Try to read the header and abort on mismatch
+                const uint8_t *header;
+                bool skip = false;
+                uint8_t message_type;
+                uint8_t first_byte = read();
+                if (first_byte == update_header[0])
+                {
+                    header = update_header;
+                    message_type = 1;
+                }
+                else if (first_byte == config_header[0])
+                {
+                    header = config_header;
+                    message_type = 2;
                 }
                 else
                 {
-                    std::vector<uint8_t> command = command_queue_.front();
-                    write_command(&command[0], command.size());
-                    command_last_sent_ = millis();
-                    command_send_retries_++;
-                }
-            }
-        }
-        else if (configuration_mode_)
-        {
-            // Inject leave config command after clearing the queue
-            command_queue_.push_back({COMMAND_LEAVE_CONFIG, 0x00});
-            command_send_retries_ = 0;
-        }
-
-        // Skip stream until start of message and parse header
-        if (!peek_status_ && available() >= 4)
-        {
-            // Try to read the header and abort on mismatch
-            const uint8_t *header;
-            bool skip = false;
-            uint8_t message_type;
-            uint8_t first_byte = read();
-            if (first_byte == update_header[0])
-            {
-                header = update_header;
-                message_type = 1;
-            }
-            else if (first_byte == config_header[0])
-            {
-                header = config_header;
-                message_type = 2;
-            }
-            else
-            {
-                skip = true;
-            }
-
-            for (int i = 1; i < 4 && !skip; i++)
-            {
-                if (read() != header[i])
                     skip = true;
-            }
-
-            if (!skip)
-                // Flag successful header reading
-                peek_status_ = message_type;
-        }
-
-        if (peek_status_ == 1 && available() >= 28)
-        {
-            uint8_t msg[26] = {0x00};
-            read_array(msg, 26);
-            peek_status_ = 0;
-
-            // Skip invalid messages
-            if (msg[24] != 0x55 || msg[25] != 0xCC)
-                return;
-
-            process_message(msg, 24);
-        }
-        if (peek_status_ == 2 && (available() >= 2 || configuration_message_length_ > 0))
-        {
-            if (configuration_message_length_ == 0)
-            {
-                // Read message content length
-                uint8_t content_length[2];
-                read_array(content_length, 2);
-                configuration_message_length_ = content_length[1] << 8 | content_length[0];
-            }
-
-            // Wait until message and frame end are available
-            if (available() >= configuration_message_length_ + 4)
-            {
-                uint8_t msg[configuration_message_length_ + 4] = {0x00};
-                read_array(msg, configuration_message_length_ + 4);
-
-                // Assert frame end read correctly
-                if (msg[configuration_message_length_] == 0x04 && msg[configuration_message_length_ + 1] == 0x03 && msg[configuration_message_length_ + 2] == 0x02 && msg[configuration_message_length_ + 3] == 0x01)
-                {
-                    process_config_message(msg, configuration_message_length_);
                 }
-                configuration_message_length_ = 0;
-                peek_status_ = 0;
-            }
-        }
 
+                for (int i = 1; i < 4 && !skip; i++)
+                {
+                    if (read() != header[i])
+                        skip = true;
+                }
+
+                if (!skip)
+                    // Flag successful header reading
+                    peek_status_ = message_type;
+            }
+
+            if (peek_status_ == 1 && available() >= 26)
+            {
+                uint8_t msg[26] = {0x00};
+                read_array(msg, 26);
+                peek_status_ = 0;
+
+                // Skip invalid messages
+                if (msg[24] != 0x55 || msg[25] != 0xCC)
+                    return;
+
+                process_message(msg, 24);
+                processed_message = true;
+            }
+            if (peek_status_ == 2 && (available() >= 2 || configuration_message_length_ > 0))
+            {
+                if (configuration_message_length_ == 0)
+                {
+                    // Read message content length
+                    uint8_t content_length[2];
+                    read_array(content_length, 2);
+                    configuration_message_length_ = content_length[1] << 8 | content_length[0];
+                    // Limit max message length
+                    configuration_message_length_ = std::min(configuration_message_length_, 20);
+                }
+
+                // Wait until message and frame end are available
+                if (available() >= configuration_message_length_ + 4)
+                {
+                    uint8_t msg[configuration_message_length_ + 4] = {0x00};
+                    read_array(msg, configuration_message_length_ + 4);
+
+                    // Assert frame end read correctly
+                    if (msg[configuration_message_length_] == 0x04 && msg[configuration_message_length_ + 1] == 0x03 && msg[configuration_message_length_ + 2] == 0x02 && msg[configuration_message_length_ + 3] == 0x01)
+                    {
+                        process_config_message(msg, configuration_message_length_);
+                    }
+                    configuration_message_length_ = 0;
+                    peek_status_ = 0;
+                    processed_message = true;
+                }
+            }
+
+        } while (processed_message);
+
+        // Detect missing updates from the sensor (not connect or in configuration mode)
         if (sensor_available_ && millis() - last_message_received_ > SENSOR_UNAVAILABLE_TIMEOUT)
         {
             sensor_available_ = false;
 
             ESP_LOGE(TAG, "LD2450-Sensor stopped sending updates!");
 
-            // Update zones and related components
+            // Update zones and related components (unavailable)
             for (Zone *zone : zones_)
             {
                 zone->update(targets_, sensor_available_);
+            }
+
+            // Update targets and related components (unavailable)
+            for (Target *target : targets_)
+            {
+                target->clear();
+            }
+        }
+
+        // Assume the sensor is in it's configuration mode, attempt to leave
+        // Attempt to leave config mode periodically if the sensor is not sending updates
+        if (!is_applying_changes_ && !sensor_available_ && millis() - last_config_leave_attempt_ > CONFIG_RECOVERY_INTERVAL)
+        {
+            ESP_LOGD(TAG, "Sensor is not sending updates, attempting to leave config mode.");
+            last_config_leave_attempt_ = millis();
+            command_send_retries_ = 0;
+            configuration_mode_ = true;
+            command_queue_.clear();
+            command_queue_.push_back({COMMAND_LEAVE_CONFIG, 0x00});
+        }
+
+        if (available() != last_available_size_)
+        {
+            last_available_size_ = available();
+            last_available_change_ = millis();
+        }
+
+        // Assume the rx buffer has overflowed in the past and is unable to recover - read everything available
+        if (available() != 0 && millis() - last_available_change_ > SENSOR_UNAVAILABLE_TIMEOUT / 2)
+        {
+            // Clear out rx buffer
+            ESP_LOGD(TAG, "Clearing RX buffer.");
+            while (available())
+            {
+                read();
             }
         }
     }
@@ -225,6 +280,8 @@ namespace esphome::ld2450
     {
         sensor_available_ = true;
         last_message_received_ = millis();
+        configuration_mode_ = false;
+
         for (int i = 0; i < 3; i++)
         {
             int offset = 8 * i;
@@ -296,21 +353,13 @@ namespace esphome::ld2450
             configuration_mode_ = false;
         }
 
-        if (msg[0] == COMMAND_RESTART && msg[1] == true)
+        if ((msg[0] == COMMAND_FACTORY_RESET || msg[0] == COMMAND_RESTART) && msg[1] == true)
         {
             configuration_mode_ = false;
 
             // Wait for sensor to restart and apply configuration before requesting switch states
-            if (is_applying_changes_)
-            {
-                delay(1500);
-                is_applying_changes_ = false;
-            }
-        }
-
-        if ((msg[0] == COMMAND_FACTORY_RESET || msg[0] == COMMAND_BLUETOOTH) && msg[1] == true)
-        {
             is_applying_changes_ = true;
+            apply_change_lockout_ = millis();
         }
 
         if (msg[0] == COMMAND_READ_VERSION && msg[1] == true)

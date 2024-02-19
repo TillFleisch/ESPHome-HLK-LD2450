@@ -139,3 +139,19 @@ A valid configuration may look like [this](examples/zones.yaml) or this:
               x: 6m
               y: 0m
 ```
+
+## Troubleshooting
+
+When using Dupont connectors make sure they make proper contact. The very short pins on the LD2450 Sensor can easily go loose or break.
+
+I recommend using a `5V` power supply and the `5V` input pin whenever possible.
+Using the the `3.3V` pin on the LD2450 sensor may cause instabilities during operation depending on the power supply, voltage regulator and other components used on the same power circuit.
+In a test scenario using a `3.3V` voltage regulator, an ESP-01 and a DHT22 the LD2450 sensor was not able to provide measurements. Observing the LD2450's TX pin using an oscilloscope yielded no updates and noisy behavior around `3.3V`. Switching to `5V` on the LD2450 sensor resolved this issue and consistent updates from the sensor were observed.
+In a different scenario, when using `3.3V` provided by an ESP32 development board, sensor updates arrived inconsistently/went missing.
+
+In some configurations, this LD2450 component may not perform ideally. If this component is used in combination with other components on a single ESP, especially ones that require long processing times, some updates provided by the sensor may be missed. As a symptom (zone) count sensors may report as `Unknown` for short periods of time and switches become unresponsive.
+If this is the case try the following steps:
+
+- increase `rx_buffer_size`
+- use a minimal ESPHome yaml configuration for troubleshooting
+- use a reliable `5V` power source for the sensor
