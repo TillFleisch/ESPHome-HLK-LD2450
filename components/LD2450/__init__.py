@@ -225,8 +225,11 @@ def validate_polygon(config):
         point_config = point_config[CONF_POINT]
         points.append((float(point_config[CONF_X]), float(point_config[CONF_Y])))
 
+    if len(points) != len(set(points)):
+        raise cv.Invalid("Polygon contains duplicate points")
+
     if not is_convex(points):
-        raise cv.Invalid("Polygon is not convex (and non-intersecting).")
+        raise cv.Invalid("Polygon is not convex (and non-intersecting)")
 
     return config
 
