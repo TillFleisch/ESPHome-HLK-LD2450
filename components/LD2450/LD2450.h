@@ -94,6 +94,7 @@ namespace esphome::ld2450
 #endif
 #ifdef USE_NUMBER
         SUB_NUMBER(max_distance)
+        SUB_NUMBER(max_angle)
 #endif
 #ifdef USE_BUTTON
         SUB_BUTTON(restart)
@@ -146,6 +147,17 @@ namespace esphome::ld2450
         void set_fast_off_detection(bool value)
         {
             fast_off_detection_ = value;
+        }
+
+
+        /**
+         * @brief Sets the maximum tilt angle detected
+         * @param angle maximum detected angle in degrees
+        */
+        void set_max_tilt_angle(float angle)
+        {
+            if (!std ::isnan(angle))
+                max_detection_tilt_angle_ = int(angle);
         }
 
         /**
@@ -357,6 +369,9 @@ namespace esphome::ld2450
 
         /// @brief Nr of times the command has been written to UART
         int command_send_retries_ = 0;
+
+        /// @brief The maximum detection angle in degrees
+        int16_t max_detection_tilt_angle_ = 60;
 
         /// @brief The maximum detection distance in mm
         int16_t max_detection_distance_ = 6000;
