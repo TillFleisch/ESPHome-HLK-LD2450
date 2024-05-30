@@ -310,12 +310,12 @@ namespace esphome::ld2450
                 (y <= max_detection_distance_ 
                     || (targets_[i]->is_present() 
                         && y <= max_detection_distance_ + max_distance_margin_)) 
-                && angle <= max_detection_tilt_angle_
+                && angle <= -max_detection_tilt_angle_
             )
                 targets_[i]->update_values(x, y, speed, distance_resolution);
             else if (
                 y >= max_detection_distance_ + max_distance_margin_ 
-                || angle > max_detection_tilt_angle_
+                || angle > -max_detection_tilt_angle_
             )
                 targets_[i]->clear();
         }
