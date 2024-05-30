@@ -95,6 +95,7 @@ namespace esphome::ld2450
 #ifdef USE_NUMBER
         SUB_NUMBER(max_distance)
         SUB_NUMBER(max_angle)
+        SUB_NUMBER(min_angle)
 #endif
 #ifdef USE_BUTTON
         SUB_BUTTON(restart)
