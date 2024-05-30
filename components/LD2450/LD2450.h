@@ -149,7 +149,6 @@ namespace esphome::ld2450
             fast_off_detection_ = value;
         }
 
-
         /**
          * @brief Sets the maximum tilt angle detected
          * @param angle maximum detected angle in degrees
@@ -158,6 +157,16 @@ namespace esphome::ld2450
         {
             if (!std ::isnan(angle))
                 max_detection_tilt_angle_ = int(angle);
+        }
+
+        /**
+         * @brief Sets the minimum tilt angle detected
+         * @param angle minimum detected angle in degrees
+        */
+        void set_min_tilt_angle(float angle)
+        {
+            if (!std ::isnan(angle))
+                min_detection_tilt_angle_ = int(angle);
         }
 
         /**
@@ -372,6 +381,9 @@ namespace esphome::ld2450
 
         /// @brief The maximum detection angle in degrees
         int16_t max_detection_tilt_angle_ = 60;
+
+        /// @brief The minimum detection angle in degrees
+        int16_t min_detection_tilt_angle_ = -60;
 
         /// @brief The maximum detection distance in mm
         int16_t max_detection_distance_ = 6000;

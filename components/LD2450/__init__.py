@@ -43,6 +43,7 @@ CONF_FLIP_X_AXIS = "flip_x_axis"
 CONF_OCCUPANCY = "occupancy"
 CONF_TARGET_COUNT = "target_count"
 CONF_MAX_TILT_ANGLE = "max_detection_tilt_angle"
+CONF_MIN_TILT_ANGLE = "min_detection_tilt_angle"
 CONF_MAX_DISTANCE = "max_detection_distance"
 CONF_MAX_DISTANCE_MARGIN = "max_distance_margin"
 CONF_TARGETS = "targets"
@@ -75,6 +76,7 @@ ld2450_ns = cg.esphome_ns.namespace("ld2450")
 LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
 Target = ld2450_ns.class_("Target", cg.Component)
 MaxTiltAngleNumber = ld2450_ns.class_("MaxTiltAngleNumber", cg.Component)
+MinTiltAngleNumber = ld2450_ns.class_("MinTiltAngleNumber", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 Zone = ld2450_ns.class_("Zone")
@@ -353,6 +355,25 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
                 }
             ).extend(cv.COMPONENT_SCHEMA),
         ),
+        cv.Optional(CONF_MIN_TILT_ANGLE): cv.Any(
+            cv.All(cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)),
+            number.NUMBER_SCHEMA.extend(
+                {
+                    cv.GenerateID(): cv.declare_id(MinTiltAngleNumber),
+                    cv.Required(CONF_NAME): cv.string_strict,
+                    cv.Optional(CONF_INITIAL_VALUE, default="60°"): cv.All(
+                        cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                    ),
+                    cv.Optional(CONF_STEP, default="1°"): cv.All(
+                        cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                    ),
+                    cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                    cv.Optional(
+                        CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES
+                    ): cv.one_of(UNIT_DEGREES, lower="true"),
+                }
+            ).extend(cv.COMPONENT_SCHEMA),
+        ),
     }
 )
 
@@ -418,6 +439,31 @@ def to_code(config):
         elif isinstance(max_angle_config, float):
             # Set fixed value from simple config
             cg.add(var.set_max_angle(max_angle_config))
+
+    # Add min angle value
+    if min_angle_config := config.get(CONF_MIN_TILT_ANGLE):
+        # Add number component
+        if isinstance(min_angle_config, dict):
+            min_angle_number = yield number.new_number(
+                min_angle_config,
+                min_value=-60.0,
+                max_value=60.0,
+                step=min_angle_config[CONF_STEP],
+            )
+            yield cg.register_parented(min_angle_number, config[CONF_ID])
+            yield cg.register_component(min_angle_number, min_angle_config)
+            cg.add(
+                min_angle_number.set_initial_state(
+                    min_angle_config[CONF_INITIAL_VALUE]
+                )
+            )
+            cg.add(
+                min_angle_number.set_restore(min_angle_config[CONF_RESTORE_VALUE])
+            )
+            cg.add(var.set_min_angle_number(min_angle_number))
+        elif isinstance(min_angle_config, float):
+            # Set fixed value from simple config
+            cg.add(var.set_min_angle(min_angle_config))
 
     # Add max distance value
     if max_distance_config := config.get(CONF_MAX_DISTANCE):

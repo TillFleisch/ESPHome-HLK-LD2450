@@ -53,6 +53,7 @@ namespace esphome::ld2450
         ESP_LOGCONFIG(TAG, "  fast_off_detection: %s", fast_off_detection_ ? "True" : "False");
         ESP_LOGCONFIG(TAG, "  flip_x_axis: %s", flip_x_axis_ ? "True" : "False");
         ESP_LOGCONFIG(TAG, "  max_detection_tilt_angle: %i °", max_detection_tilt_angle_);
+        ESP_LOGCONFIG(TAG, "  min_detection_tilt_angle: %i °", min_detection_tilt_angle_);
         ESP_LOGCONFIG(TAG, "  max_detection_distance: %i mm", max_detection_distance_);
         ESP_LOGCONFIG(TAG, "  max_distance_margin: %i mm", max_distance_margin_);
 #ifdef USE_BINARY_SENSOR
@@ -60,6 +61,7 @@ namespace esphome::ld2450
 #endif
 #ifdef USE_NUMBER
         LOG_NUMBER("  ", "MaxTiltAngleNumber", max_angle_number_);
+        LOG_NUMBER("  ", "MinTiltAngleNumber", min_angle_number_);
         LOG_NUMBER("  ", "MaxDistanceNumber", max_distance_number_);
 #endif
 #ifdef USE_BUTTON
@@ -310,11 +312,13 @@ namespace esphome::ld2450
                 (y <= max_detection_distance_ 
                     || (targets_[i]->is_present() 
                         && y <= max_detection_distance_ + max_distance_margin_)) 
+                && angle >= min_detection_tilt_angle_
                 && angle <= max_detection_tilt_angle_
             )
                 targets_[i]->update_values(x, y, speed, distance_resolution);
             else if (
                 y >= max_detection_distance_ + max_distance_margin_ 
+                || angle < min_detection_tilt_angle_
                 || angle > max_detection_tilt_angle_
             )
                 targets_[i]->clear();
