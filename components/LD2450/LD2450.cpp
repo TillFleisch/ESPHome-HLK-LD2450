@@ -305,7 +305,7 @@ namespace esphome::ld2450
             targets_[i]->update_values(x, y, speed, distance_resolution);
 
             // Filter targets further than max detection distance and max angle
-            float angle = atan2(y, x) * (180 / M_PI) - 90;
+            float angle = -(atan2(y, x) * (180 / M_PI) - 90);
             if (
                 (y <= max_detection_distance_ 
                     || (targets_[i]->is_present() 
