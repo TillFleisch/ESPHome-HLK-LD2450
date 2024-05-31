@@ -337,16 +337,20 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
             ).extend(cv.COMPONENT_SCHEMA),
         ),
         cv.Optional(CONF_MAX_TILT_ANGLE): cv.Any(
-            cv.All(cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)),
+            cv.All(
+                cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+            ),
             number.NUMBER_SCHEMA.extend(
                 {
                     cv.GenerateID(): cv.declare_id(MaxTiltAngleNumber),
                     cv.Required(CONF_NAME): cv.string_strict,
                     cv.Optional(CONF_INITIAL_VALUE, default="60°"): cv.All(
-                        cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                        cv.float_with_unit("angle", "(°|deg)"),
+                        cv.Range(min=-60.0, max=60.0),
                     ),
                     cv.Optional(CONF_STEP, default="1°"): cv.All(
-                        cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                        cv.float_with_unit("angle", "(°|deg)"),
+                        cv.Range(min=-60.0, max=60.0),
                     ),
                     cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                     cv.Optional(
@@ -356,16 +360,20 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
             ).extend(cv.COMPONENT_SCHEMA),
         ),
         cv.Optional(CONF_MIN_TILT_ANGLE): cv.Any(
-            cv.All(cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)),
+            cv.All(
+                cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+            ),
             number.NUMBER_SCHEMA.extend(
                 {
                     cv.GenerateID(): cv.declare_id(MinTiltAngleNumber),
                     cv.Required(CONF_NAME): cv.string_strict,
                     cv.Optional(CONF_INITIAL_VALUE, default="60°"): cv.All(
-                        cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                        cv.float_with_unit("angle", "(°|deg)"),
+                        cv.Range(min=-60.0, max=60.0),
                     ),
                     cv.Optional(CONF_STEP, default="1°"): cv.All(
-                        cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                        cv.float_with_unit("angle", "(°|deg)"),
+                        cv.Range(min=-60.0, max=60.0),
                     ),
                     cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                     cv.Optional(
@@ -428,13 +436,9 @@ def to_code(config):
             yield cg.register_parented(max_angle_number, config[CONF_ID])
             yield cg.register_component(max_angle_number, max_angle_config)
             cg.add(
-                max_angle_number.set_initial_state(
-                    max_angle_config[CONF_INITIAL_VALUE]
-                )
+                max_angle_number.set_initial_state(max_angle_config[CONF_INITIAL_VALUE])
             )
-            cg.add(
-                max_angle_number.set_restore(max_angle_config[CONF_RESTORE_VALUE])
-            )
+            cg.add(max_angle_number.set_restore(max_angle_config[CONF_RESTORE_VALUE]))
             cg.add(var.set_max_angle_number(max_angle_number))
         elif isinstance(max_angle_config, float):
             # Set fixed value from simple config
@@ -453,13 +457,9 @@ def to_code(config):
             yield cg.register_parented(min_angle_number, config[CONF_ID])
             yield cg.register_component(min_angle_number, min_angle_config)
             cg.add(
-                min_angle_number.set_initial_state(
-                    min_angle_config[CONF_INITIAL_VALUE]
-                )
+                min_angle_number.set_initial_state(min_angle_config[CONF_INITIAL_VALUE])
             )
-            cg.add(
-                min_angle_number.set_restore(min_angle_config[CONF_RESTORE_VALUE])
-            )
+            cg.add(min_angle_number.set_restore(min_angle_config[CONF_RESTORE_VALUE]))
             cg.add(var.set_min_angle_number(min_angle_number))
         elif isinstance(min_angle_config, float):
             # Set fixed value from simple config

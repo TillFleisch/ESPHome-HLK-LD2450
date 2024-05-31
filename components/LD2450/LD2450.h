@@ -153,7 +153,7 @@ namespace esphome::ld2450
         /**
          * @brief Sets the maximum tilt angle detected
          * @param angle maximum detected angle in degrees
-        */
+         */
         void set_max_tilt_angle(float angle)
         {
             if (!std ::isnan(angle))
@@ -163,7 +163,7 @@ namespace esphome::ld2450
         /**
          * @brief Sets the minimum tilt angle detected
          * @param angle minimum detected angle in degrees
-        */
+         */
         void set_min_tilt_angle(float angle)
         {
             if (!std ::isnan(angle))

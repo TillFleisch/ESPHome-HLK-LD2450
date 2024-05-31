@@ -33,6 +33,10 @@ LD2450:
   uart_id: uart_bus
   flip_x_axis: true
   fast_off_detection: true
+  max_detection_tilt_angle:
+    name: "Max Tilt Angle"
+  min_detection_tilt_angle:
+    name: "Min Tilt Angle"
   max_detection_distance:
     name: "Max Distance"
     initial_value: 4m
