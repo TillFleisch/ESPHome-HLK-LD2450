@@ -39,6 +39,8 @@ This is the most basic `useful` configuration. You can find [this](examples/basi
 - **name**(**Optional**, string): The name of this sensor, which is used during logging. Defaults to `LD2450`.
 - **flip_x_axis**(**Optional**, boolean): If set to true, values along the X-axis will be flipped. Defaults to `false`.
 - **fast_off_detection**(**Optional**, boolean): If set to true, fast-away detection will be used for targets, which leave the visible range of the sensor. Defaults to `false`.
+- **max_detection_tilt_angle**(**Optional**, number or angle): The highest allowed detection tilt angle. All targets outside this angle will not be tracked. A configuration for a fixed angle value. See: [Max Tilt Angle Number](#max-tilt-angle-number).
+- **min_detection_tilt_angle**(**Optional**, number or angle): The lowest allowed detection tilt angle. All targets outside this angle will not be tracked. A configuration for a fixed angle value. See: [Min Tilt Angle Number](#min-tilt-angle-number).
 - **max_detection_distance**(**Optional**, number or distance): The furthest allowed detection distance. All targets further than this distance will not be tracked. Either a configuration for a number input or a fixed distance value. See: [Max Distance Number](#max-distance-number).
 - **max_distance_margin**(**Optional**, ): The margin which is added to the maximum allowed distance. Targets that are already being tracked, will still be tracked within the additional margin. This prevents on-off-flickering of related sensors. Defaults to `25cm`.
 - **occupancy**(**Optional**, binary sensor): A binary sensor, which will be triggered if at least one target is present. `id` or `name` required. All options from [Binary Sensor](https://esphome.io/components/binary_sensor/#config-binary-sensor).
@@ -50,6 +52,28 @@ This is the most basic `useful` configuration. You can find [this](examples/basi
 - **baud_rate_select**(**Optional**, select): Select component which sets the sensors baud rate.
 - **targets**(**Optional**, list of targets): A list of at most `3` Targets. Each target has its own configuration and sensors. See [Target](#target).
 - **zones**(**Optional**, list of zones): A list Zones. Each zone has its own configuration and sensors. See [Zone](#zone).
+
+### Max Tilt Angle Number
+
+Instead of a fixed maximum tilt angle, a user-defined number component can be defined. The values of this component will be used as the highest allowed angle.
+
+- **name**(**Required**, string): Name of the maximum tilt angle number component.
+- **initial_value**(**Optional**, distance): The initial value of this sensor. Defaults to `60°` - required unit is `°` or `deg`. This value will be ignored if `restore_value` is enabled.
+- **step**(**Optional**, distance): Step size of the input number. Defaults to `1°`.
+- **restore_value**(**Optional**, boolean): Tries to restore the last value from Flash upon reboot. Defaults to `true`.
+
+All other options from [number](https://esphome.io/components/number/#base-number-configuration).
+
+### Min Tilt Angle Number
+
+Instead of a fixed minimum tilt angle, a user-defined number component can be defined. The values of this component will be used as the highest allowed angle.
+
+- **name**(**Required**, string): Name of the minimum tilt angle number component.
+- **initial_value**(**Optional**, distance): The initial value of this sensor. Defaults to `-60°` - required unit is `°` or `deg`. This value will be ignored if `restore_value` is enabled.
+- **step**(**Optional**, distance): Step size of the input number. Defaults to `1°`.
+- **restore_value**(**Optional**, boolean): Tries to restore the last value from Flash upon reboot. Defaults to `true`.
+
+All other options from [number](https://esphome.io/components/number/#base-number-configuration).
 
 ### Max Distance Number
 
