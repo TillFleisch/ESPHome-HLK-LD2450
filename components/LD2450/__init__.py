@@ -367,7 +367,7 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
                 {
                     cv.GenerateID(): cv.declare_id(MinTiltAngleNumber),
                     cv.Required(CONF_NAME): cv.string_strict,
-                    cv.Optional(CONF_INITIAL_VALUE, default="90°"): cv.All(
+                    cv.Optional(CONF_INITIAL_VALUE, default="-90°"): cv.All(
                         cv.float_with_unit("angle", "(°|deg)"),
                         cv.Range(min=-90.0, max=90.0),
                     ),
@@ -442,7 +442,7 @@ def to_code(config):
             cg.add(var.set_max_angle_number(max_angle_number))
         elif isinstance(max_angle_config, float):
             # Set fixed value from simple config
-            cg.add(var.set_max_angle(max_angle_config))
+            cg.add(var.set_max_tilt_angle(max_angle_config))
 
     # Add min angle value
     if min_angle_config := config.get(CONF_MIN_TILT_ANGLE):
@@ -463,7 +463,7 @@ def to_code(config):
             cg.add(var.set_min_angle_number(min_angle_number))
         elif isinstance(min_angle_config, float):
             # Set fixed value from simple config
-            cg.add(var.set_min_angle(min_angle_config))
+            cg.add(var.set_min_tilt_angle(min_angle_config))
 
     # Add max distance value
     if max_distance_config := config.get(CONF_MAX_DISTANCE):
