@@ -381,10 +381,10 @@ namespace esphome::ld2450
         int command_send_retries_ = 0;
 
         /// @brief The maximum detection angle in degrees
-        int16_t max_detection_tilt_angle_ = 60;
+        int16_t max_detection_tilt_angle_ = 90;
 
         /// @brief The minimum detection angle in degrees
-        int16_t min_detection_tilt_angle_ = -60;
+        int16_t min_detection_tilt_angle_ = -90;
 
         /// @brief The maximum detection distance in mm
         int16_t max_detection_distance_ = 6000;

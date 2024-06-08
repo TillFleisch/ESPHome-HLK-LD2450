@@ -338,19 +338,19 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
         ),
         cv.Optional(CONF_MAX_TILT_ANGLE): cv.Any(
             cv.All(
-                cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-90.0, max=90.0)
             ),
             number.NUMBER_SCHEMA.extend(
                 {
                     cv.GenerateID(): cv.declare_id(MaxTiltAngleNumber),
                     cv.Required(CONF_NAME): cv.string_strict,
-                    cv.Optional(CONF_INITIAL_VALUE, default="60°"): cv.All(
+                    cv.Optional(CONF_INITIAL_VALUE, default="90°"): cv.All(
                         cv.float_with_unit("angle", "(°|deg)"),
-                        cv.Range(min=-60.0, max=60.0),
+                        cv.Range(min=-90.0, max=90.0),
                     ),
                     cv.Optional(CONF_STEP, default="1°"): cv.All(
                         cv.float_with_unit("angle", "(°|deg)"),
-                        cv.Range(min=-60.0, max=60.0),
+                        cv.Range(min=-90.0, max=90.0),
                     ),
                     cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                     cv.Optional(
@@ -361,19 +361,19 @@ CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
         ),
         cv.Optional(CONF_MIN_TILT_ANGLE): cv.Any(
             cv.All(
-                cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-60.0, max=60.0)
+                cv.float_with_unit("angle", "(°|deg)"), cv.Range(min=-90.0, max=90.0)
             ),
             number.NUMBER_SCHEMA.extend(
                 {
                     cv.GenerateID(): cv.declare_id(MinTiltAngleNumber),
                     cv.Required(CONF_NAME): cv.string_strict,
-                    cv.Optional(CONF_INITIAL_VALUE, default="60°"): cv.All(
+                    cv.Optional(CONF_INITIAL_VALUE, default="90°"): cv.All(
                         cv.float_with_unit("angle", "(°|deg)"),
-                        cv.Range(min=-60.0, max=60.0),
+                        cv.Range(min=-90.0, max=90.0),
                     ),
                     cv.Optional(CONF_STEP, default="1°"): cv.All(
                         cv.float_with_unit("angle", "(°|deg)"),
-                        cv.Range(min=-60.0, max=60.0),
+                        cv.Range(min=-90.0, max=90.0),
                     ),
                     cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
                     cv.Optional(
@@ -429,8 +429,8 @@ def to_code(config):
         if isinstance(max_angle_config, dict):
             max_angle_number = yield number.new_number(
                 max_angle_config,
-                min_value=-60.0,
-                max_value=60.0,
+                min_value=-90.0,
+                max_value=90.0,
                 step=max_angle_config[CONF_STEP],
             )
             yield cg.register_parented(max_angle_number, config[CONF_ID])
@@ -450,8 +450,8 @@ def to_code(config):
         if isinstance(min_angle_config, dict):
             min_angle_number = yield number.new_number(
                 min_angle_config,
-                min_value=-60.0,
-                max_value=60.0,
+                min_value=-90.0,
+                max_value=90.0,
                 step=min_angle_config[CONF_STEP],
             )
             yield cg.register_parented(min_angle_number, config[CONF_ID])
