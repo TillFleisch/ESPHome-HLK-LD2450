@@ -188,11 +188,13 @@ namespace esphome::ld2450
         /**
          * @brief Sets the maximum detection distance
          * @param distance maximum distance in meters
+         * @return the new maximum distance
          */
-        void set_max_distance(float distance)
+        float set_max_distance(float distance)
         {
             if (!std ::isnan(distance))
                 max_detection_distance_ = int(distance * 1000);
+            return distance;
         }
 
         /**

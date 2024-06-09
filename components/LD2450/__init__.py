@@ -76,15 +76,16 @@ ICON_ACCOUNT_GROUP = "mdi:account-group"
 ld2450_ns = cg.esphome_ns.namespace("ld2450")
 LD2450 = ld2450_ns.class_("LD2450", cg.Component, uart.UARTDevice)
 Target = ld2450_ns.class_("Target", cg.Component)
-MaxTiltAngleNumber = ld2450_ns.class_("MaxTiltAngleNumber", cg.Component)
-MinTiltAngleNumber = ld2450_ns.class_("MinTiltAngleNumber", cg.Component)
-MaxDistanceNumber = ld2450_ns.class_("MaxDistanceNumber", cg.Component)
+MaxTiltAngleNumber = ld2450_ns.class_("LimitNumber", cg.Component)
+MinTiltAngleNumber = ld2450_ns.class_("LimitNumber", cg.Component)
+MaxDistanceNumber = ld2450_ns.class_("LimitNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 Zone = ld2450_ns.class_("Zone")
 EmptyButton = ld2450_ns.class_("EmptyButton", button.Button, cg.Component)
 TrackingModeSwitch = ld2450_ns.class_("TrackingModeSwitch", switch.Switch, cg.Component)
 BluetoothSwitch = ld2450_ns.class_("BluetoothSwitch", switch.Switch, cg.Component)
 BaudRateSelect = ld2450_ns.class_("BaudRateSelect", select.Select, cg.Component)
+LimitTypeEnum = ld2450_ns.enum("LimitType")
 
 DISTANCE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
@@ -452,72 +453,57 @@ def to_code(config):
         target_count_sensor = yield sensor.new_sensor(target_count_config)
         cg.add(var.set_target_count_sensor(target_count_sensor))
 
-    # Add max angle value
-    if max_angle_config := config.get(CONF_MAX_TILT_ANGLE):
-        # Add number component
-        if isinstance(max_angle_config, dict):
-            max_angle_number = yield number.new_number(
-                max_angle_config,
-                min_value=-90.0,
-                max_value=90.0,
-                step=max_angle_config[CONF_STEP],
-            )
-            yield cg.register_parented(max_angle_number, config[CONF_ID])
-            yield cg.register_component(max_angle_number, max_angle_config)
-            cg.add(
-                max_angle_number.set_initial_state(max_angle_config[CONF_INITIAL_VALUE])
-            )
-            cg.add(max_angle_number.set_restore(max_angle_config[CONF_RESTORE_VALUE]))
-            cg.add(var.set_max_angle_number(max_angle_number))
-        elif isinstance(max_angle_config, float):
-            # Set fixed value from simple config
-            cg.add(var.set_max_tilt_angle(max_angle_config))
+    # Different configurations for limit number components
+    limit_numbers = {
+        CONF_MAX_DISTANCE: {
+            "type_enum": LimitTypeEnum.MAX_DISTANCE,
+            "min": 0.0,
+            "max": 6.0,
+        },
+        CONF_MAX_TILT_ANGLE: {
+            "type_enum": LimitTypeEnum.MAX_TILT_ANGLE,
+            "min": -90,
+            "max": 90,
+        },
+        CONF_MIN_TILT_ANGLE: {
+            "type_enum": LimitTypeEnum.MIN_TILT_ANGLE,
+            "min": -90,
+            "max": 90,
+        },
+    }
 
-    # Add min angle value
-    if min_angle_config := config.get(CONF_MIN_TILT_ANGLE):
-        # Add number component
-        if isinstance(min_angle_config, dict):
-            min_angle_number = yield number.new_number(
-                min_angle_config,
-                min_value=-90.0,
-                max_value=90.0,
-                step=min_angle_config[CONF_STEP],
-            )
-            yield cg.register_parented(min_angle_number, config[CONF_ID])
-            yield cg.register_component(min_angle_number, min_angle_config)
-            cg.add(
-                min_angle_number.set_initial_state(min_angle_config[CONF_INITIAL_VALUE])
-            )
-            cg.add(min_angle_number.set_restore(min_angle_config[CONF_RESTORE_VALUE]))
-            cg.add(var.set_min_angle_number(min_angle_number))
-        elif isinstance(min_angle_config, float):
-            # Set fixed value from simple config
-            cg.add(var.set_min_tilt_angle(min_angle_config))
-
-    # Add max distance value
-    if max_distance_config := config.get(CONF_MAX_DISTANCE):
-        # Add number component
-        if isinstance(max_distance_config, dict):
-            max_distance_number = yield number.new_number(
-                max_distance_config,
-                min_value=0.0,
-                max_value=6.0,
-                step=max_distance_config[CONF_STEP],
-            )
-            yield cg.register_parented(max_distance_number, config[CONF_ID])
-            yield cg.register_component(max_distance_number, max_distance_config)
-            cg.add(
-                max_distance_number.set_initial_state(
-                    max_distance_config[CONF_INITIAL_VALUE]
+    # Add limit values components / fixed numbers
+    for _, (key, value) in enumerate(limit_numbers.items()):
+        if limit_config := config.get(key):
+            # Add number component
+            if isinstance(limit_config, dict):
+                limit_number = yield number.new_number(
+                    limit_config,
+                    min_value=value["min"],
+                    max_value=value["max"],
+                    step=limit_config[CONF_STEP],
                 )
-            )
-            cg.add(
-                max_distance_number.set_restore(max_distance_config[CONF_RESTORE_VALUE])
-            )
-            cg.add(var.set_max_distance_number(max_distance_number))
-        elif isinstance(max_distance_config, float):
-            # Set fixed value from simple config
-            cg.add(var.set_max_distance(max_distance_config))
+                yield cg.register_parented(limit_number, config[CONF_ID])
+                yield cg.register_component(limit_number, limit_config)
+                cg.add(limit_number.set_initial_state(limit_config[CONF_INITIAL_VALUE]))
+                cg.add(limit_number.set_restore(limit_config[CONF_RESTORE_VALUE]))
+                cg.add(limit_number.set_type(value["type_enum"]))
+
+                if key == CONF_MAX_DISTANCE:
+                    cg.add(var.set_max_distance_number(limit_number))
+                elif key == CONF_MAX_TILT_ANGLE:
+                    cg.add(var.set_max_angle_number(limit_number))
+                elif key == CONF_MIN_TILT_ANGLE:
+                    cg.add(var.set_min_angle_number(limit_number))
+
+            elif isinstance(limit_config, float):
+                # Set fixed value from simple config
+                if key == CONF_MAX_DISTANCE:
+                    cg.add(var.set_max_distance(limit_config))
+                elif key == CONF_MAX_TILT_ANGLE:
+                    cg.add(var.set_max_tilt_angle(limit_config))
+                elif key == CONF_MIN_TILT_ANGLE:
+                    cg.add(var.set_min_tilt_angle(limit_config))
 
     # Add sensor restart button if present
     if restart_config := config.get(CONF_RESTART_BUTTON):
