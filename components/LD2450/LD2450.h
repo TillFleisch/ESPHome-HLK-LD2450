@@ -157,7 +157,7 @@ namespace esphome::ld2450
         void set_max_tilt_angle(float angle)
         {
             if (!std ::isnan(angle))
-                max_detection_tilt_angle_ = int(angle);
+                max_detection_tilt_angle_ = angle;
         }
 
         /**
@@ -167,7 +167,18 @@ namespace esphome::ld2450
         void set_min_tilt_angle(float angle)
         {
             if (!std ::isnan(angle))
-                min_detection_tilt_angle_ = int(angle);
+                min_detection_tilt_angle_ = angle;
+        }
+
+        /**
+         * @brief Sets the margin which used for angle limitations
+         * This margin is added to the min/max tilt angle, such that detected targets still counts as present, even though they are outside of the min/max detection angle. This can be used to reduce flickering.
+         * @param angle angle in degrees
+         */
+        void set_tilt_angle_margin(float angle)
+        {
+            if (!std ::isnan(angle))
+                tilt_angle_margin_ = angle;
         }
 
         /**
@@ -381,10 +392,13 @@ namespace esphome::ld2450
         int command_send_retries_ = 0;
 
         /// @brief The maximum detection angle in degrees
-        int16_t max_detection_tilt_angle_ = 90;
+        float max_detection_tilt_angle_ = 90;
 
         /// @brief The minimum detection angle in degrees
-        int16_t min_detection_tilt_angle_ = -90;
+        float min_detection_tilt_angle_ = -90;
+
+        /// @brief The margin added to tilt angle detection limitations
+        float tilt_angle_margin_ = 5;
 
         /// @brief The maximum detection distance in mm
         int16_t max_detection_distance_ = 6000;

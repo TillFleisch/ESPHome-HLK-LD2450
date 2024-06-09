@@ -308,12 +308,18 @@ namespace esphome::ld2450
 
             // Filter targets further than max detection distance and max angle
             float angle = -(atan2(y, x) * (180 / M_PI) - 90);
-            if (
-                (y <= max_detection_distance_ || (targets_[i]->is_present() && y <= max_detection_distance_ + max_distance_margin_)) && angle >= min_detection_tilt_angle_ && angle <= max_detection_tilt_angle_)
+            if ((y <= max_detection_distance_ || (targets_[i]->is_present() && y <= max_detection_distance_ + max_distance_margin_)) &&
+                (angle <= max_detection_tilt_angle_ || (targets_[i]->is_present() && angle <= max_detection_tilt_angle_ + tilt_angle_margin_)) &&
+                (angle >= min_detection_tilt_angle_ || (targets_[i]->is_present() && angle >= min_detection_tilt_angle_ - tilt_angle_margin_)))
+            {
                 targets_[i]->update_values(x, y, speed, distance_resolution);
-            else if (
-                y >= max_detection_distance_ + max_distance_margin_ || angle < min_detection_tilt_angle_ || angle > max_detection_tilt_angle_)
+            }
+            else if (y > max_detection_distance_ + max_distance_margin_ ||
+                     angle > max_detection_tilt_angle_ + tilt_angle_margin_ ||
+                     angle < min_detection_tilt_angle_ - tilt_angle_margin_)
+            {
                 targets_[i]->clear();
+            }
         }
 
         int target_count = 0;
