@@ -151,23 +151,27 @@ namespace esphome::ld2450
         }
 
         /**
-         * @brief Sets the maximum tilt angle detected
+         * @brief Sets the maximum tilt angle which is detected (clamped between min tilt angle an 90)
          * @param angle maximum detected angle in degrees
+         * @return the new (clamped) max tilt value
          */
-        void set_max_tilt_angle(float angle)
+        float set_max_tilt_angle(float angle)
         {
-            if (!std ::isnan(angle))
-                max_detection_tilt_angle_ = angle;
+            if (!std::isnan(angle))
+                max_detection_tilt_angle_ = std::max(std::min(angle, 90.0f), min_detection_tilt_angle_ + 1.0f);
+            return max_detection_tilt_angle_;
         }
 
         /**
-         * @brief Sets the minimum tilt angle detected
+         * @brief Sets the minimum tilt angle which is detected (clamped between max tilt angle an 90)
          * @param angle minimum detected angle in degrees
+         * @return the new (clamped) min tilt value
          */
-        void set_min_tilt_angle(float angle)
+        float set_min_tilt_angle(float angle)
         {
             if (!std ::isnan(angle))
-                min_detection_tilt_angle_ = angle;
+                min_detection_tilt_angle_ = std::min(std::max(angle, -90.0f), max_detection_tilt_angle_ - 1.0f);
+            return min_detection_tilt_angle_;
         }
 
         /**

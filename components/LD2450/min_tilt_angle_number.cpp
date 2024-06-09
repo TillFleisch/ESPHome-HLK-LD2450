@@ -21,7 +21,8 @@ namespace esphome::ld2450
 
     void MinTiltAngleNumber::control(float value)
     {
-        parent_->set_min_tilt_angle(value);
+        // Use potentially clamped value
+        value = parent_->set_min_tilt_angle(value);
         publish_state(value);
 
         if (this->restore_value_)

@@ -239,6 +239,31 @@ def validate_polygon(config):
     return config
 
 
+def validate_min_max_angle(config):
+    """Assert that the min and max tilt angles do not exceed each other."""
+
+    min_angle = -90
+    if subconfig := config.get(CONF_MIN_TILT_ANGLE):
+        if isinstance(subconfig, dict):
+            min_angle = subconfig[CONF_INITIAL_VALUE]
+        elif isinstance(subconfig, float):
+            min_angle = subconfig
+
+    max_angle = 90
+    if subconfig := config.get(CONF_MAX_TILT_ANGLE):
+        if isinstance(subconfig, dict):
+            max_angle = subconfig[CONF_INITIAL_VALUE]
+        elif isinstance(subconfig, float):
+            max_angle = subconfig
+
+    if min_angle >= max_angle:
+        raise cv.Invalid(
+            f"{CONF_MIN_TILT_ANGLE} must be smaller than {CONF_MAX_TILT_ANGLE} (including initial values)!"
+        )
+
+    return config
+
+
 ZONE_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_ZONE): cv.All(
@@ -270,119 +295,122 @@ ZONE_SCHEMA = cv.Schema(
     }
 )
 
-CONFIG_SCHEMA = uart.UART_DEVICE_SCHEMA.extend(
-    {
-        cv.GenerateID(): cv.declare_id(LD2450),
-        cv.Required(UART_ID): cv.use_id(UARTComponent),
-        cv.Optional(CONF_NAME, default="LD2450"): cv.string_strict,
-        cv.Optional(CONF_TARGETS): cv.All(
-            cv.ensure_list(TARGET_SCHEMA),
-            cv.Length(min=1, max=3),
-        ),
-        cv.Optional(CONF_ZONES): cv.All(
-            cv.ensure_list(ZONE_SCHEMA),
-            cv.Length(min=1),
-        ),
-        cv.Optional(CONF_FLIP_X_AXIS, default=False): cv.boolean,
-        cv.Optional(CONF_USE_FAST_OFF, default=False): cv.boolean,
-        cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
-            device_class=DEVICE_CLASS_OCCUPANCY
-        ),
-        cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
-            accuracy_decimals=0,
-        ),
-        cv.Optional(CONF_MAX_DISTANCE_MARGIN, default="25cm"): cv.All(
-            cv.distance, cv.Range(min=0.0, max=6.0)
-        ),
-        cv.Optional(CONF_TILT_ANGLE_MARGIN, default="5°"): cv.All(
-            cv.angle, cv.Range(min=0.0, max=45.0)
-        ),
-        cv.Optional(CONF_RESTART_BUTTON): button.button_schema(
-            EmptyButton,
-            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
-            device_class=DEVICE_CLASS_RESTART,
-        ),
-        cv.Optional(CONF_FACTORY_RESET_BUTTON): button.button_schema(
-            EmptyButton,
-            entity_category=ENTITY_CATEGORY_CONFIG,
-            icon=ICON_RESTART_ALERT,
-        ),
-        cv.Optional(CONF_TRACKING_MODE_SWITCH): switch.switch_schema(
-            TrackingModeSwitch,
-            icon=ICON_ACCOUNT_GROUP,
-            entity_category=ENTITY_CATEGORY_CONFIG,
-        ),
-        cv.Optional(CONF_BLUETOOTH_SWITCH): switch.switch_schema(
-            BluetoothSwitch,
-            icon=ICON_BLUETOOTH,
-            entity_category=ENTITY_CATEGORY_CONFIG,
-        ),
-        cv.Optional(CONF_BAUD_RATE_SELECT): select.select_schema(
-            BaudRateSelect,
-            entity_category=ENTITY_CATEGORY_CONFIG,
-        ),
-        cv.Optional(CONF_MAX_DISTANCE): cv.Any(
-            cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
-            number.NUMBER_SCHEMA.extend(
-                {
-                    cv.GenerateID(): cv.declare_id(MaxDistanceNumber),
-                    cv.Required(CONF_NAME): cv.string_strict,
-                    cv.Optional(CONF_INITIAL_VALUE, default="6.0m"): cv.All(
-                        cv.distance, cv.Range(min=0.0, max=6.0)
-                    ),
-                    cv.Optional(CONF_STEP, default="10cm"): cv.All(
-                        cv.distance, cv.Range(min=0.0, max=6.0)
-                    ),
-                    cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
-                    cv.Optional(
-                        CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER
-                    ): cv.one_of(UNIT_METER, lower="true"),
-                }
-            ).extend(cv.COMPONENT_SCHEMA),
-        ),
-        cv.Optional(CONF_MAX_TILT_ANGLE): cv.Any(
-            cv.All(cv.angle, cv.Range(min=-90.0, max=90.0)),
-            number.NUMBER_SCHEMA.extend(
-                {
-                    cv.GenerateID(): cv.declare_id(MaxTiltAngleNumber),
-                    cv.Required(CONF_NAME): cv.string_strict,
-                    cv.Optional(CONF_INITIAL_VALUE, default="90°"): cv.All(
-                        cv.angle,
-                        cv.Range(min=-90.0, max=90.0),
-                    ),
-                    cv.Optional(CONF_STEP, default="1°"): cv.All(
-                        cv.angle,
-                        cv.Range(min=-90.0, max=90.0),
-                    ),
-                    cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
-                    cv.Optional(
-                        CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES
-                    ): cv.one_of(UNIT_DEGREES, lower="true"),
-                }
-            ).extend(cv.COMPONENT_SCHEMA),
-        ),
-        cv.Optional(CONF_MIN_TILT_ANGLE): cv.Any(
-            cv.All(cv.angle, cv.Range(min=-90.0, max=90.0)),
-            number.NUMBER_SCHEMA.extend(
-                {
-                    cv.GenerateID(): cv.declare_id(MinTiltAngleNumber),
-                    cv.Required(CONF_NAME): cv.string_strict,
-                    cv.Optional(CONF_INITIAL_VALUE, default="-90°"): cv.All(
-                        cv.angle,
-                        cv.Range(min=-90.0, max=90.0),
-                    ),
-                    cv.Optional(CONF_STEP, default="1°"): cv.All(
-                        cv.angle,
-                        cv.Range(min=-90.0, max=90.0),
-                    ),
-                    cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
-                    cv.Optional(
-                        CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES
-                    ): cv.one_of(UNIT_DEGREES, lower="true"),
-                }
-            ).extend(cv.COMPONENT_SCHEMA),
-        ),
-    }
+CONFIG_SCHEMA = cv.All(
+    uart.UART_DEVICE_SCHEMA.extend(
+        {
+            cv.GenerateID(): cv.declare_id(LD2450),
+            cv.Required(UART_ID): cv.use_id(UARTComponent),
+            cv.Optional(CONF_NAME, default="LD2450"): cv.string_strict,
+            cv.Optional(CONF_TARGETS): cv.All(
+                cv.ensure_list(TARGET_SCHEMA),
+                cv.Length(min=1, max=3),
+            ),
+            cv.Optional(CONF_ZONES): cv.All(
+                cv.ensure_list(ZONE_SCHEMA),
+                cv.Length(min=1),
+            ),
+            cv.Optional(CONF_FLIP_X_AXIS, default=False): cv.boolean,
+            cv.Optional(CONF_USE_FAST_OFF, default=False): cv.boolean,
+            cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
+                device_class=DEVICE_CLASS_OCCUPANCY
+            ),
+            cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
+                accuracy_decimals=0,
+            ),
+            cv.Optional(CONF_MAX_DISTANCE_MARGIN, default="25cm"): cv.All(
+                cv.distance, cv.Range(min=0.0, max=6.0)
+            ),
+            cv.Optional(CONF_TILT_ANGLE_MARGIN, default="5°"): cv.All(
+                cv.angle, cv.Range(min=0.0, max=45.0)
+            ),
+            cv.Optional(CONF_RESTART_BUTTON): button.button_schema(
+                EmptyButton,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+                device_class=DEVICE_CLASS_RESTART,
+            ),
+            cv.Optional(CONF_FACTORY_RESET_BUTTON): button.button_schema(
+                EmptyButton,
+                entity_category=ENTITY_CATEGORY_CONFIG,
+                icon=ICON_RESTART_ALERT,
+            ),
+            cv.Optional(CONF_TRACKING_MODE_SWITCH): switch.switch_schema(
+                TrackingModeSwitch,
+                icon=ICON_ACCOUNT_GROUP,
+                entity_category=ENTITY_CATEGORY_CONFIG,
+            ),
+            cv.Optional(CONF_BLUETOOTH_SWITCH): switch.switch_schema(
+                BluetoothSwitch,
+                icon=ICON_BLUETOOTH,
+                entity_category=ENTITY_CATEGORY_CONFIG,
+            ),
+            cv.Optional(CONF_BAUD_RATE_SELECT): select.select_schema(
+                BaudRateSelect,
+                entity_category=ENTITY_CATEGORY_CONFIG,
+            ),
+            cv.Optional(CONF_MAX_DISTANCE): cv.Any(
+                cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
+                number.NUMBER_SCHEMA.extend(
+                    {
+                        cv.GenerateID(): cv.declare_id(MaxDistanceNumber),
+                        cv.Required(CONF_NAME): cv.string_strict,
+                        cv.Optional(CONF_INITIAL_VALUE, default="6.0m"): cv.All(
+                            cv.distance, cv.Range(min=0.0, max=6.0)
+                        ),
+                        cv.Optional(CONF_STEP, default="10cm"): cv.All(
+                            cv.distance, cv.Range(min=0.0, max=6.0)
+                        ),
+                        cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                        cv.Optional(
+                            CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER
+                        ): cv.one_of(UNIT_METER, lower="true"),
+                    }
+                ).extend(cv.COMPONENT_SCHEMA),
+            ),
+            cv.Optional(CONF_MAX_TILT_ANGLE): cv.Any(
+                cv.All(cv.angle, cv.Range(min=-90.0, max=90.0)),
+                number.NUMBER_SCHEMA.extend(
+                    {
+                        cv.GenerateID(): cv.declare_id(MaxTiltAngleNumber),
+                        cv.Required(CONF_NAME): cv.string_strict,
+                        cv.Optional(CONF_INITIAL_VALUE, default="90°"): cv.All(
+                            cv.angle,
+                            cv.Range(min=-90.0, max=90.0),
+                        ),
+                        cv.Optional(CONF_STEP, default="1°"): cv.All(
+                            cv.angle,
+                            cv.Range(min=-90.0, max=90.0),
+                        ),
+                        cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                        cv.Optional(
+                            CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES
+                        ): cv.one_of(UNIT_DEGREES, lower="true"),
+                    }
+                ).extend(cv.COMPONENT_SCHEMA),
+            ),
+            cv.Optional(CONF_MIN_TILT_ANGLE): cv.Any(
+                cv.All(cv.angle, cv.Range(min=-90.0, max=90.0)),
+                number.NUMBER_SCHEMA.extend(
+                    {
+                        cv.GenerateID(): cv.declare_id(MinTiltAngleNumber),
+                        cv.Required(CONF_NAME): cv.string_strict,
+                        cv.Optional(CONF_INITIAL_VALUE, default="-90°"): cv.All(
+                            cv.angle,
+                            cv.Range(min=-90.0, max=90.0),
+                        ),
+                        cv.Optional(CONF_STEP, default="1°"): cv.All(
+                            cv.angle,
+                            cv.Range(min=-90.0, max=90.0),
+                        ),
+                        cv.Optional(CONF_RESTORE_VALUE, default=True): cv.boolean,
+                        cv.Optional(
+                            CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES
+                        ): cv.one_of(UNIT_DEGREES, lower="true"),
+                    }
+                ).extend(cv.COMPONENT_SCHEMA),
+            ),
+        }
+    ),
+    validate_min_max_angle,
 )
 
 
