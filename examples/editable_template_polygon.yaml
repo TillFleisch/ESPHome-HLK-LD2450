@@ -1,0 +1,170 @@
+esphome:
+  # [...]
+  on_boot:
+    # Set polygon zone with values form number components
+    - LD2450.zone.update_polygon:
+        id: template_zone
+        polygon: !lambda |-
+          return {ld2450::Point(id(point_x1).state*1000,id(point_y1).state*1000), ld2450::Point(id(point_x2).state*1000,id(point_y2).state*1000), ld2450::Point(id(point_x3).state*1000,id(point_y3).state*1000), ld2450::Point(id(point_x4).state*1000,id(point_y4).state*1000)};
+
+# [...]
+
+LD2450:
+  # [...]
+  zones:
+    - zone:
+        name: "Templated Zone"
+        id: template_zone
+        polygon:
+          lambda: !lambda |-
+            return {};
+          update_interval: 0s
+        occupancy:
+          id: template_zone_occupancy
+
+script:
+  - id: update_number_components
+    then:
+      # Update number components from zone (if the polygon didn't change since the provided values were invalid)
+      - lambda: !lambda |-
+          auto polygon = id(template_zone).get_polygon();
+
+          if (polygon.size() != 4)
+            return;
+
+          template_::TemplateNumber* numbers[8] = {id(point_x1), id(point_y1), id(point_x2), id(point_y2), id(point_x3), id(point_y3), id(point_x4), id(point_y4)};
+          for(int i = 0; i < 8; i++){
+            auto new_state = i % 2 == 0 ? (polygon[int(i/2)].x/1000.0f) : (polygon[int(i/2)].y/1000.0f);
+            if (numbers[i]->state != new_state){
+              numbers[i]->publish_state(new_state);
+            }
+          }
+
+number:
+  - platform: template
+    id: point_x1
+    name: "Point 1 X"
+    initial_value: -6
+    min_value: -6
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(x*1000,id(point_y1).state*1000), ld2450::Point(id(point_x2).state*1000,id(point_y2).state*1000), ld2450::Point(id(point_x3).state*1000,id(point_y3).state*1000), ld2450::Point(id(point_x4).state*1000,id(point_y4).state*1000)};
+      - script.execute: update_number_components
+
+  - platform: template
+    id: point_y1
+    name: "Point 1 Y"
+    initial_value: 0
+    min_value: 0
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(id(point_x1).state*1000,x*1000), ld2450::Point(id(point_x2).state*1000,id(point_y2).state*1000), ld2450::Point(id(point_x3).state*1000,id(point_y3).state*1000), ld2450::Point(id(point_x4).state*1000,id(point_y4).state*1000)};
+      - script.execute: update_number_components
+
+  - platform: template
+    id: point_x2
+    name: "Point 2 X"
+    initial_value: -6
+    min_value: -6
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(id(point_x1).state*1000,id(point_y1).state*1000), ld2450::Point(x*1000,id(point_y2).state*1000), ld2450::Point(id(point_x3).state*1000,id(point_y3).state*1000), ld2450::Point(id(point_x4).state*1000,id(point_y4).state*1000)};
+      - script.execute: update_number_components
+
+  - platform: template
+    id: point_y2
+    name: "Point 2 Y"
+    initial_value: 6
+    min_value: 0
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(id(point_x1).state*1000,id(point_y1).state*1000), ld2450::Point(id(point_x2).state*1000,x*1000), ld2450::Point(id(point_x3).state*1000,id(point_y3).state*1000), ld2450::Point(id(point_x4).state*1000,id(point_y4).state*1000)};
+      - script.execute: update_number_components
+
+  - platform: template
+    id: point_x3
+    name: "Point 3 X"
+    initial_value: 6
+    min_value: -6
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(id(point_x1).state*1000,id(point_y1).state*1000), ld2450::Point(id(point_x2).state*1000,id(point_y2).state*1000), ld2450::Point(x*1000,id(point_y3).state*1000), ld2450::Point(id(point_x4).state*1000,id(point_y4).state*1000)};
+      - script.execute: update_number_components
+
+  - platform: template
+    id: point_y3
+    name: "Point 3 Y"
+    initial_value: 6
+    min_value: 0
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(id(point_x1).state*1000,id(point_y1).state*1000), ld2450::Point(id(point_x2).state*1000,id(point_y2).state*1000), ld2450::Point(id(point_x3).state*1000,x*1000), ld2450::Point(id(point_x4).state*1000,id(point_y4).state*1000)};
+      - script.execute: update_number_components
+
+  - platform: template
+    id: point_x4
+    name: "Point 4 X"
+    initial_value: 6
+    min_value: -6
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(id(point_x1).state*1000,id(point_y1).state*1000), ld2450::Point(id(point_x2).state*1000,id(point_y2).state*1000), ld2450::Point(id(point_x3).state*1000,id(point_y3).state*1000), ld2450::Point(x*1000,id(point_y4).state*1000)};
+      - script.execute: update_number_components
+
+  - platform: template
+    id: point_y4
+    name: "Point 4 Y"
+    initial_value: 0
+    min_value: 0
+    max_value: 6
+    step: 0.1
+    restore_value: true
+    set_action:
+      # Update polygon zone with new value form number component
+      - LD2450.zone.update_polygon:
+          id: template_zone
+          polygon: !lambda |-
+            return {ld2450::Point(id(point_x1).state*1000,id(point_y1).state*1000), ld2450::Point(id(point_x2).state*1000,id(point_y2).state*1000), ld2450::Point(id(point_x3).state*1000,id(point_y3).state*1000), ld2450::Point(id(point_x4).state*1000,x*1000)};
+      - script.execute: update_number_components

@@ -194,6 +194,11 @@ on_...:
 - **id**(**Required**, id): Id of the zone which should be updated
 - **polygon**(**Required**, `return std::vector<ld2450::Point>;`): List of Points which make up a convex polygon. The new polygon is only used if it's valid.
 
+With the help of this action, a user editable dynamic polygon can be defined.
+Note, that this allows for the definition of non-convex polygons. In the referenced example, the number components are only updated if the new polygon is valid.
+When using the Home Assistant front end, number sliders may not reflect this change (or rather lack thereof) properly.
+A partial example configuration for dynamic template polygons can be found [here](examples/editable_template_polygon.yaml).
+
 ## Troubleshooting
 
 When using Dupont connectors make sure they make proper contact. The very short pins on the LD2450 Sensor can easily go loose or break.
