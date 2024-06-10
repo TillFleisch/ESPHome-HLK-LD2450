@@ -151,7 +151,7 @@ namespace esphome::ld2450
         }
 
         /**
-         * @brief Sets the maximum tilt angle which is detected (clamped between min tilt angle an 90)
+         * @brief Sets the maximum tilt angle which is detected (clamped between min tilt angle and 90)
          * @param angle maximum detected angle in degrees
          * @return the new (clamped) max tilt value
          */
@@ -163,7 +163,7 @@ namespace esphome::ld2450
         }
 
         /**
-         * @brief Sets the minimum tilt angle which is detected (clamped between max tilt angle an 90)
+         * @brief Sets the minimum tilt angle which is detected (clamped between max tilt angle and -90)
          * @param angle minimum detected angle in degrees
          * @return the new (clamped) min tilt value
          */

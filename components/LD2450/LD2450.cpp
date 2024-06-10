@@ -56,6 +56,7 @@ namespace esphome::ld2450
         ESP_LOGCONFIG(TAG, "  min_detection_tilt_angle: %i °", min_detection_tilt_angle_);
         ESP_LOGCONFIG(TAG, "  max_detection_distance: %i mm", max_detection_distance_);
         ESP_LOGCONFIG(TAG, "  max_distance_margin: %i mm", max_distance_margin_);
+        ESP_LOGCONFIG(TAG, "  tilt_angle_margin: %i °", tilt_angle_margin_);
 #ifdef USE_BINARY_SENSOR
         LOG_BINARY_SENSOR("  ", "OccupancyBinarySensor", occupancy_binary_sensor_);
 #endif
