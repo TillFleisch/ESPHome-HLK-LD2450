@@ -1,5 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
+from esphome import automation
 from esphome.components import (
     binary_sensor,
     button,
@@ -13,10 +14,12 @@ from esphome.components.uart import UARTComponent
 from esphome.const import (
     CONF_ID,
     CONF_INITIAL_VALUE,
+    CONF_LAMBDA,
     CONF_NAME,
     CONF_RESTORE_VALUE,
     CONF_STEP,
     CONF_UNIT_OF_MEASUREMENT,
+    CONF_UPDATE_INTERVAL,
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_OCCUPANCY,
     DEVICE_CLASS_RESTART,
@@ -81,11 +84,14 @@ MinTiltAngleNumber = ld2450_ns.class_("LimitNumber", cg.Component)
 MaxDistanceNumber = ld2450_ns.class_("LimitNumber", cg.Component)
 PollingSensor = ld2450_ns.class_("PollingSensor", cg.PollingComponent)
 Zone = ld2450_ns.class_("Zone")
+Point = ld2450_ns.class_("Point")
 EmptyButton = ld2450_ns.class_("EmptyButton", button.Button, cg.Component)
 TrackingModeSwitch = ld2450_ns.class_("TrackingModeSwitch", switch.Switch, cg.Component)
 BluetoothSwitch = ld2450_ns.class_("BluetoothSwitch", switch.Switch, cg.Component)
 BaudRateSelect = ld2450_ns.class_("BaudRateSelect", select.Select, cg.Component)
 LimitTypeEnum = ld2450_ns.enum("LimitType")
+UpdatePolygonAction = ld2450_ns.class_("UpdatePolygonAction", automation.Action)
+
 
 DISTANCE_SENSOR_SCHEMA = (
     sensor.sensor_schema(
@@ -226,6 +232,9 @@ def is_convex(points):
 def validate_polygon(config):
     """Assert that the provided polygon is convex."""
 
+    if CONF_LAMBDA in config.get(CONF_POLYGON, []):
+        return config
+
     points = []
     for point_config in config[CONF_POLYGON]:
         point_config = point_config[CONF_POINT]
@@ -277,8 +286,18 @@ ZONE_SCHEMA = cv.Schema(
                 cv.Optional(
                     CONF_TARGET_TIMEOUT, default="5s"
                 ): cv.positive_time_period_milliseconds,
-                cv.Required(CONF_POLYGON): cv.All(
-                    cv.ensure_list(POLYGON_SCHEMA), cv.Length(min=3)
+                cv.Required(CONF_POLYGON): cv.Any(
+                    cv.All(cv.ensure_list(POLYGON_SCHEMA), cv.Length(min=3)),
+                    cv.Schema(
+                        {
+                            cv.Required(CONF_LAMBDA): cv.templatable(
+                                cv.ensure_list(Point)
+                            ),
+                            cv.Optional(
+                                CONF_UPDATE_INTERVAL, default="1s"
+                            ): cv.positive_time_period_milliseconds,
+                        }
+                    ),
                 ),
                 cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
                     device_class=DEVICE_CLASS_OCCUPANCY,
@@ -606,14 +625,27 @@ def zone_to_code(config):
     cg.add(zone.set_target_timeout(config[CONF_TARGET_TIMEOUT]))
 
     # Add points to the polygon of the zone object
-    for point_config in config[CONF_POLYGON]:
-        point_config = point_config[CONF_POINT]
-
+    if CONF_LAMBDA in config.get(CONF_POLYGON, []):
+        template_ = yield cg.process_lambda(
+            config[CONF_POLYGON][CONF_LAMBDA],
+            [],
+            return_type=cg.std_vector.template(Point),
+        )
+        cg.add(zone.set_template_polygon(template_))
         cg.add(
-            zone.append_point(
-                (float(point_config[CONF_X])), float(point_config[CONF_Y])
+            zone.set_template_evaluation_interval(
+                config[CONF_POLYGON][CONF_UPDATE_INTERVAL]
             )
         )
+    else:
+        for point_config in config[CONF_POLYGON]:
+            point_config = point_config[CONF_POINT]
+
+            cg.add(
+                zone.append_point(
+                    (float(point_config[CONF_X])), float(point_config[CONF_Y])
+                )
+            )
 
     # Add binary occupancy sensor if present
     if occupancy_config := config.get(CONF_OCCUPANCY):
@@ -638,3 +670,25 @@ def zone_to_code(config):
         cg.add(zone.set_target_count_sensor(target_count_sensor))
 
     return zone
+
+
+@automation.register_action(
+    "LD2450.zone.update_polygon",
+    UpdatePolygonAction,
+    cv.All(
+        {
+            cv.Required(CONF_ID): cv.use_id(Zone),
+            cv.Required(CONF_POLYGON): cv.templatable(cv.ensure_list(Point)),
+        }
+    ),
+)
+async def update_polygon_to_code(config, action_id, template_arg, args):
+    """Code generation for the update (template) polygon action."""
+    parent = await cg.get_variable(config[CONF_ID])
+    var = cg.new_Pvariable(action_id, template_arg, parent)
+
+    template_ = await cg.templatable(
+        config[CONF_POLYGON], args, cg.std_vector.template(Point)
+    )
+    cg.add(var.set_polygon(template_))
+    return var
