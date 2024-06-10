@@ -144,3 +144,38 @@ LD2450:
           id: z2_occupancy
         target_count:
           id: z2_target_count
+
+    - zone:
+        name: "Template1"
+        margin: 0.4m
+        polygon:
+          lambda: !lambda |-
+            return {ld2450::Point(1500,10), ld2450::Point(6000,10), ld2450::Point(6000,2600), ld2450::Point(-1500,2600)};
+          update_interval: 2s
+        occupancy:
+          id: z3_occupancy
+
+    - zone:
+        name: "Template2"
+        polygon:
+          lambda: !lambda |-
+            return {ld2450::Point(1500,10), ld2450::Point(6000,10), ld2450::Point(6000,2600), ld2450::Point(-1500,2600)};
+
+    - zone:
+        name: "Template3"
+        id: zone_template_3
+        polygon:
+          lambda: !lambda |-
+            return {};
+          update_interval: 0s
+        occupancy:
+          id: z5_occupancy
+
+button:
+  - platform: template
+    name: Update polygon
+    on_press:
+      - LD2450.zone.update_polygon:
+          id: zone_template_3
+          polygon: !lambda |-
+            return {ld2450::Point(1500,10), ld2450::Point(6000,10), ld2450::Point(6000,2600), ld2450::Point(-1500,2600)};

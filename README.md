@@ -117,7 +117,7 @@ A valid configuration may look like [this](examples/target_sensors.yaml) or this
 The name of zone sub-sensor will be prefixed with the zone name. For instance, if the zone is called `Dining Table` and a sub-sensor of this zone is named `Occupancy`, the actual name of the Sensor will be `Dining Table Occupancy`.
 
 - **name**(**Required**, string): The name of the zone. This name will be used as a prefix for sub-sensors.
-- **polygon**(**Required**, polygon): A simple convex polygon with at least 3 vertices. See [Polygon](#polygon).
+- **polygon**(**Required**, polygon): A simple convex polygon with at least 3 vertices or a template polygon. See [Polygon](#polygon).
 - **margin**(**Optional**, distance): The margin that is added to the zone. Targets that are already being tracked, will still be tracked within the additional margin. This prevents on-off-flickering of related sensors. Defaults to `25cm`.
 - **target_timeout**(**Optional**, time): The time after which a target within the zone is considered absent. This helps with continuous detection of non-moving targets. Targets which leave the zone via polygon boundaries are still detected as absent form the zone immediately. Defaults to `5s`.
 - **occupancy**(**Optional**, binary sensor): A binary sensor, that will be triggered if at least one target is tracked inside the zone. `id` or `name` required. The default name is empty, which results in the sensor being named after the zone. All options from [Binary Sensor](https://esphome.io/components/binary_sensor/#config-binary-sensor).
@@ -164,6 +164,35 @@ A valid configuration may look like [this](examples/zones.yaml) or this:
               x: 6m
               y: 0m
 ```
+
+Alternatively, a polygon can also be defined via a template expression like this:
+
+```yaml
+        # Template polygon which updated every 2 seconds
+        polygon:
+          lambda: !lambda |-
+            return {ld2450::Point(1500,10), ld2450::Point(6000,10), ld2450::Point(6000,2600), ld2450::Point(-1500,2600)};
+          update_interval: 2s
+```
+
+- **lambda**(**Required**, `return std::vector<ld2450::Point>;`): List of Points which make up a convex polygon. The expression is evaluated every `update_interval`, if the provided polygon is invalid (i.e. not convex or too small) the previously used polygon is kept.
+- **update_interval**(**Optional**, time): Interval in which the template polygon is evaluated. Set to `0s` to disable. Defaults to `1s`.
+
+### LD2450.zone.update_polygon
+
+The polygon used by a zone can be updated with the `zone.update_polygon` action.
+The change is only effective, if the provided polygon is valid.
+
+```yaml
+on_...:
+  - LD2450.zone.update_polygon:
+      id: z4
+      polygon: !lambda |-
+        return {ld2450::Point(1500,10), ld2450::Point(6000,10), ld2450::Point(6000,2600), ld2450::Point(-1500,2600)};
+```
+
+- **id**(**Required**, id): Id of the zone which should be updated
+- **polygon**(**Required**, `return std::vector<ld2450::Point>;`): List of Points which make up a convex polygon. The new polygon is only used if it's valid.
 
 ## Troubleshooting
 

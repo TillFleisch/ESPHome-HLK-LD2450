@@ -17,6 +17,11 @@ namespace esphome::ld2450
             int dy_1 = polygon[(i + 1) % size].y - polygon[i % size].y;
             int dx_2 = polygon[(i + 2) % size].x - polygon[(i + 1) % size].x;
             int dy_2 = polygon[(i + 2) % size].y - polygon[(i + 1) % size].y;
+
+            // Reject duplicate points
+            if ((dx_1 == 0 && dy_1 == 0) || (dx_2 == 0 && dy_2 == 0))
+                return false;
+
             float cross_product = dx_1 * dy_2 - dy_1 * dx_2;
             if (!std::isnan(last_cross_product) && ((cross_product > 0 && last_cross_product < 0) || (cross_product > 0 && last_cross_product < 0)))
                 return false;
@@ -30,6 +35,11 @@ namespace esphome::ld2450
         ESP_LOGCONFIG(TAG, "Zone: %s", name_);
         ESP_LOGCONFIG(TAG, "  polygon_size: %i", polygon_.size());
         ESP_LOGCONFIG(TAG, "  polygon valid: %s", is_convex(polygon_) ? "true" : "false");
+        if (template_polygon_ != nullptr)
+        {
+            ESP_LOGCONFIG(TAG, "  template polygon defined");
+            ESP_LOGCONFIG(TAG, "  template polygon update interval: %i", template_evaluation_interval_);
+        }
         ESP_LOGCONFIG(TAG, "  target_timeout: %i", target_timeout_);
 #ifdef USE_BINARY_SENSOR
         LOG_BINARY_SENSOR("  ", "OccupancyBinarySensor", occupancy_binary_sensor_);
@@ -41,6 +51,13 @@ namespace esphome::ld2450
 
     void Zone::update(std::vector<Target *> &targets, bool sensor_available)
     {
+        // evaluate custom template polygon at given interval
+        if (template_evaluation_interval_ != 0 && millis() - last_template_evaluation_ > template_evaluation_interval_)
+        {
+            last_template_evaluation_ = millis();
+            evaluate_template_polygon();
+        }
+
         if (!sensor_available)
         {
 #ifdef USE_BINARY_SENSOR
@@ -171,5 +188,14 @@ namespace esphome::ld2450
             }
         }
         return true;
+    }
+
+    bool Zone::evaluate_template_polygon()
+    {
+        if (template_polygon_ == nullptr)
+            return false;
+
+        std::vector<Point> val = (template_polygon_)();
+        return update_polygon(val);
     }
 } // namespace esphome::ld2450

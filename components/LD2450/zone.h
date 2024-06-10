@@ -121,6 +121,38 @@ namespace esphome::ld2450
             if (!is_convex(polygon))
                 return false;
             polygon_ = polygon;
+            return true;
+        }
+
+        /**
+         * @brief Defines a template polygon which will be evaluated regularly
+         */
+        void set_template_polygon(std::function<std::vector<Point>()> &&template_polygon)
+        {
+            this->template_polygon_ = template_polygon;
+        }
+
+        /**
+         * @brief Sets the interval at which template polygons are evaluated
+         */
+        void set_template_evaluation_interval(uint32_t interval)
+        {
+            template_evaluation_interval_ = interval;
+        }
+
+        /**
+         * @brief Evaluates the template polygon which is configured for this zone
+         * @return false if the polygon is not defined or invalid, true otherwise
+         */
+        bool evaluate_template_polygon();
+
+        /**
+         * @brief Retrieves the currently used polygon
+         * @return list of points which make up the current polygon
+         */
+        std::vector<Point> get_polygon()
+        {
+            return polygon_;
         }
 
     protected:
@@ -136,7 +168,7 @@ namespace esphome::ld2450
         /// @brief List of points which make up a convex polygon
         std::vector<Point> polygon_{};
 
-        /// @brief Margin around the polygon, which still in mm
+        /// @brief Margin around the polygon in mm, in which existing targets are tracked further
         uint16_t margin_ = 250;
 
         /// @brief timeout after which a target within the is considered absent
@@ -144,5 +176,34 @@ namespace esphome::ld2450
 
         /// @brief Map of targets which are currently tracked inside of this polygon with their last seen timestamp
         std::map<Target *, uint32_t> tracked_targets_{};
+
+        /// @brief Template polygon function
+        std::function<std::vector<Point>()> template_polygon_ = nullptr;
+
+        /// @brief timestamp of the last template evaluation
+        uint32_t last_template_evaluation_ = 0;
+
+        /// @brief interval in which the polygon template is evaluated (time in ms); 0 for no updates
+        uint32_t template_evaluation_interval_ = 1000;
+    };
+
+    template <typename... Ts>
+    class UpdatePolygonAction : public Action<Ts...>
+    {
+    public:
+        UpdatePolygonAction(Zone *parent)
+            : parent_(parent)
+        {
+        }
+
+        TEMPLATABLE_VALUE(std::vector<Point>, polygon)
+
+        void play(Ts... x) override
+        {
+            std::vector<Point> polygon = this->polygon_.value(x...);
+            this->parent_->update_polygon(polygon);
+        }
+
+        Zone *parent_;
     };
 } // namespace esphome::ld2450
