@@ -94,6 +94,8 @@ namespace esphome::ld2450
 #endif
 #ifdef USE_NUMBER
         SUB_NUMBER(max_distance)
+        SUB_NUMBER(max_angle)
+        SUB_NUMBER(min_angle)
 #endif
 #ifdef USE_BUTTON
         SUB_BUTTON(restart)
@@ -149,13 +151,50 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Sets the maximum tilt angle which is detected (clamped between min tilt angle and 90)
+         * @param angle maximum detected angle in degrees
+         * @return the new (clamped) max tilt value
+         */
+        float set_max_tilt_angle(float angle)
+        {
+            if (!std::isnan(angle))
+                max_detection_tilt_angle_ = std::max(std::min(angle, 90.0f), min_detection_tilt_angle_ + 1.0f);
+            return max_detection_tilt_angle_;
+        }
+
+        /**
+         * @brief Sets the minimum tilt angle which is detected (clamped between max tilt angle and -90)
+         * @param angle minimum detected angle in degrees
+         * @return the new (clamped) min tilt value
+         */
+        float set_min_tilt_angle(float angle)
+        {
+            if (!std ::isnan(angle))
+                min_detection_tilt_angle_ = std::min(std::max(angle, -90.0f), max_detection_tilt_angle_ - 1.0f);
+            return min_detection_tilt_angle_;
+        }
+
+        /**
+         * @brief Sets the margin which used for angle limitations
+         * This margin is added to the min/max tilt angle, such that detected targets still counts as present, even though they are outside of the min/max detection angle. This can be used to reduce flickering.
+         * @param angle angle in degrees
+         */
+        void set_tilt_angle_margin(float angle)
+        {
+            if (!std ::isnan(angle))
+                tilt_angle_margin_ = angle;
+        }
+
+        /**
          * @brief Sets the maximum detection distance
          * @param distance maximum distance in meters
+         * @return the new maximum distance
          */
-        void set_max_distance(float distance)
+        float set_max_distance(float distance)
         {
             if (!std ::isnan(distance))
                 max_detection_distance_ = int(distance * 1000);
+            return distance;
         }
 
         /**
@@ -357,6 +396,15 @@ namespace esphome::ld2450
 
         /// @brief Nr of times the command has been written to UART
         int command_send_retries_ = 0;
+
+        /// @brief The maximum detection angle in degrees
+        float max_detection_tilt_angle_ = 90;
+
+        /// @brief The minimum detection angle in degrees
+        float min_detection_tilt_angle_ = -90;
+
+        /// @brief The margin added to tilt angle detection limitations
+        float tilt_angle_margin_ = 5;
 
         /// @brief The maximum detection distance in mm
         int16_t max_detection_distance_ = 6000;

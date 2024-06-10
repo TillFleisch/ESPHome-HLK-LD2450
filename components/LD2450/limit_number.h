@@ -8,9 +8,19 @@ namespace esphome::ld2450
 {
 
     /**
-     * User controlled number component which updates the max detection distance on it's parent.
+     * Enum which determines which property this number component affects.
      */
-    class MaxDistanceNumber : public number::Number, public Component, public Parented<LD2450>
+    enum LimitType
+    {
+        MAX_DISTANCE,
+        MAX_TILT_ANGLE,
+        MIN_TILT_ANGLE,
+    };
+
+    /**
+     * User controlled number component which updates a limitation property on it's parent.
+     */
+    class LimitNumber : public number::Number, public Component, public Parented<LD2450>
     {
     public:
         void setup() override;
@@ -25,6 +35,15 @@ namespace esphome::ld2450
         }
 
         /**
+         * @brief Sets which property is affected by this number component
+         * @param type new type
+         */
+        void set_type(LimitType type)
+        {
+            type_ = type;
+        }
+
+        /**
          * @brief Sets the restore flag. If set to true, this component will attempt to restore the value instead of using the initial value.
          * @param restore_value new value
          */
@@ -36,9 +55,12 @@ namespace esphome::ld2450
     protected:
         /**
          * @brief Action performed when a new value is available. Forwards the value to the parent component. Updates preferences if required.
-         * @param value new maximum distance value
+         * @param value new limitation value
          */
         void control(float value) override;
+
+        /// @brief Determines which property is affected by this component
+        LimitType type_ = MAX_DISTANCE;
 
         /// @brief Initial value of this number component
         float initial_value_ = 6.0f;

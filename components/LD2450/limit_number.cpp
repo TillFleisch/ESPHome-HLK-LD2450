@@ -1,8 +1,8 @@
-#include "max_detection_number.h"
+#include "limit_number.h"
 
 namespace esphome::ld2450
 {
-    void MaxDistanceNumber::setup()
+    void LimitNumber::setup()
     {
         float value;
         if (!restore_value_)
@@ -19,9 +19,24 @@ namespace esphome::ld2450
         control(value);
     }
 
-    void MaxDistanceNumber::control(float value)
+    void LimitNumber::control(float value)
     {
-        parent_->set_max_distance(value);
+        switch (type_)
+        {
+        case MAX_DISTANCE:
+            value = parent_->set_max_distance(value);
+            break;
+        case MAX_TILT_ANGLE:
+            // Use potentially clamped value
+            value = parent_->set_max_tilt_angle(value);
+            break;
+        case MIN_TILT_ANGLE:
+            // Use potentially clamped value
+            value = parent_->set_min_tilt_angle(value);
+            break;
+        default:
+            break;
+        }
         publish_state(value);
 
         if (this->restore_value_)
