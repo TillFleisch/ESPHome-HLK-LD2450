@@ -38,9 +38,9 @@ namespace esphome::ld2450
         if (template_polygon_ != nullptr)
         {
             ESP_LOGCONFIG(TAG, "  template polygon defined");
-            ESP_LOGCONFIG(TAG, "  template polygon update interval: %i", template_evaluation_interval_);
+            ESP_LOGCONFIG(TAG, "  template polygon update interval: %i", int(template_evaluation_interval_));
         }
-        ESP_LOGCONFIG(TAG, "  target_timeout: %i", target_timeout_);
+        ESP_LOGCONFIG(TAG, "  target_timeout: %i", int(target_timeout_));
 #ifdef USE_BINARY_SENSOR
         LOG_BINARY_SENSOR("  ", "OccupancyBinarySensor", occupancy_binary_sensor_);
 #endif
