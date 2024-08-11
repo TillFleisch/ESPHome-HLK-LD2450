@@ -11,7 +11,7 @@
 #ifdef USE_BINARY_SENSOR
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
-#ifdef USE_BINARY_SENSOR
+#ifdef USE_SENSOR
 #include "esphome/components/sensor/sensor.h"
 #endif
 #ifdef USE_NUMBER

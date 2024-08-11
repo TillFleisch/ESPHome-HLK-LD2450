@@ -238,6 +238,15 @@ namespace esphome::ld2450
 
             ESP_LOGE(TAG, "LD2450-Sensor stopped sending updates!");
 
+#ifdef USE_BINARY_SENSOR
+            if (occupancy_binary_sensor_ != nullptr)
+                occupancy_binary_sensor_->publish_state(false);
+#endif
+#ifdef USE_SENSOR
+            if (target_count_sensor_ != nullptr)
+                target_count_sensor_->publish_state(NAN);
+#endif
+
             // Update zones and related components (unavailable)
             for (Zone *zone : zones_)
             {
@@ -329,11 +338,11 @@ namespace esphome::ld2450
         is_occupied_ = target_count > 0;
 
 #ifdef USE_BINARY_SENSOR
-        if (occupancy_binary_sensor_ != nullptr && occupancy_binary_sensor_->state != is_occupied_)
+        if (occupancy_binary_sensor_ != nullptr)
             occupancy_binary_sensor_->publish_state(is_occupied_);
 #endif
 #ifdef USE_SENSOR
-        if (target_count_sensor_ != nullptr && target_count_sensor_->state != target_count)
+        if (target_count_sensor_ != nullptr && target_count_sensor_->raw_state != target_count)
             target_count_sensor_->publish_state(target_count);
 #endif
 
