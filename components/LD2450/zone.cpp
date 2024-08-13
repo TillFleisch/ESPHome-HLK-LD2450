@@ -81,11 +81,11 @@ namespace esphome::ld2450
         }
 
 #ifdef USE_BINARY_SENSOR
-        if (occupancy_binary_sensor_ != nullptr && (occupancy_binary_sensor_->state != (target_count > 0) || !occupancy_binary_sensor_->has_state()))
+        if (occupancy_binary_sensor_ != nullptr)
             occupancy_binary_sensor_->publish_state(target_count > 0);
 #endif
 #ifdef USE_SENSOR
-        if (target_count_sensor_ != nullptr && (target_count_sensor_->state != target_count || !target_count_sensor_->has_state()))
+        if (target_count_sensor_ != nullptr && (target_count_sensor_->raw_state != target_count))
             target_count_sensor_->publish_state(target_count);
 #endif
     }
