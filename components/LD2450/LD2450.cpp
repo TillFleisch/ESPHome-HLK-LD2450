@@ -158,7 +158,6 @@ namespace esphome::ld2450
             {
                 // Try to read the header and abort on mismatch
                 const uint8_t *header;
-                bool skip = false;
                 uint8_t message_type;
                 uint8_t first_byte = read();
                 if (first_byte == update_header[0])
@@ -171,18 +170,19 @@ namespace esphome::ld2450
                     header = config_header;
                     message_type = 2;
                 }
-                else
-                {
-                    skip = true;
-                }
+                else continue;
 
-                for (int i = 1; i < 4 && !skip; i++)
+                bool header_match = true;
+                for (int i = 1; i < 4; i++)
                 {
                     if (read() != header[i])
-                        skip = true;
+                    {
+                        header_match = false;
+                        break;
+                    }
                 }
 
-                if (!skip)
+                if (header_match)
                     // Flag successful header reading
                     peek_status_ = message_type;
             }
