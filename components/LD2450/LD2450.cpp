@@ -170,7 +170,10 @@ namespace esphome::ld2450
                     header = config_header;
                     message_type = 2;
                 }
-                else continue;
+                else
+                {
+                    continue;
+                }
 
                 bool header_match = true;
                 for (int i = 1; i < 4; i++)
