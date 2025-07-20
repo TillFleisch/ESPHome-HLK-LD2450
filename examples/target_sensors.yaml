@@ -25,13 +25,19 @@ LD2450:
         debug: true
         x_position:
             id: t1_xpos
+            name: t1_xpos
         y_position:
             id: t1_ypos
+            name: t1_ypos
         speed:
             id: t1_speed
+            name: t1_speed
         distance_resolution:
             id: t1_res
+            name: t1_res
         angle:
             id: t1_angle
+            name: t1_angle
         distance:
             id: t1_distance
+            name: t1_distance
