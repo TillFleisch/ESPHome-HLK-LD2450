@@ -3,6 +3,9 @@
 This external [ESPHome](https://esphome.io) component adds support for the [Hi-Link HKL-LD2450](https://www.hlktech.net/index.php?id=1157) Human presence sensor to ESPHome.
 In addition to a basic binary presence sensor, this component adds various different sensors for each detected target and supports custom presence detection Zones.
 
+# Needed Update foe 2025.7
+you need to update your targets and zones with new "name:" configs under every existing "id:" tag. It is irrelevant how you name these, as long as the names are unique! (for reference you can look below at the respective examples)
+
 ## Recommended configuration
 
 1. Set up a single target with debugging enabled and view the logs (i.e. using `esphome logs`).
