@@ -39,8 +39,10 @@ LD2450:
               y: 0m
         occupancy:
           id: z1_occupancy
+          name: z1_occupancy
         target_count:
           id: z1_target_count
+          name: z1_target_count
     - zone:
         name: "Office Corner"
         margin: 25cm
@@ -56,4 +58,5 @@ LD2450:
               y: 0m
         occupancy:
           id: z2_occupancy
+          name: z2_occupancy
 
