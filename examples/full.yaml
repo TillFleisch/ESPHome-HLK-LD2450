@@ -60,44 +60,62 @@ LD2450:
         debug: true
         x_position:
             id: t1_xpos
+            name: t1_xpos
         y_position:
             id: t1_ypos
+            name: t1_ypos
         speed:
             id: t1_speed
+            name: t1_speed
         distance_resolution:
             id: t1_res
+            name: t1_res
         angle:
             id: t1_angle
+            name: t1_angle
         distance:
             id: t1_distance
+            name: t1_distance
     - target:
         id: t2
         x_position:
             id: t2_xpos
+            name: t2_xpos
         y_position:
             id: t2_ypos
+            name: : t2_ypos
         speed:
             id: t2_speed
+            name: t2_speed
         distance_resolution:
             id: t2_res
+            name: t2_res
         angle:
             id: t2_angle
+            name: t2_angle
         distance:
             id: t2_distance
+            name: t2_distance
     - target:
         id: t3
         x_position:
             id: t3_xpos
+            name: t3_xpos
         y_position:
             id: t3_ypos
+            name: t3_ypos
         speed:
             id: t3_speed
+            name: t3_speed
         distance_resolution:
             id: t3_res
+            name: t3_res
         angle:
             id: t3_angle
+            name: t3_angle
         distance:
             id: t3_distance
+            name: t3_distance
   zones:
     - zone:
         name: "Office Right"
@@ -116,8 +134,10 @@ LD2450:
               y: 0m
         occupancy:
           id: z1_occupancy
+          name: z1_occupancy
         target_count:
           id: z1_target_count
+          name: z1_target_count
     - zone:
         name: "Office Left"
         margin: 0.4m
@@ -136,5 +156,7 @@ LD2450:
               y: 0m
         occupancy:
           id: z2_occupancy
+          name: z2_occupancy
         target_count:
           id: z2_target_count
+          name: z2_target_count
