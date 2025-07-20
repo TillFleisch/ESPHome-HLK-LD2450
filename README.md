@@ -110,6 +110,7 @@ A valid configuration may look like [this](examples/target_sensors.yaml) or this
         debug: true
         angle:
             id: t1_angle
+            name: "t1_angle"
 ```
 
 ### Zone
@@ -135,8 +136,10 @@ A valid configuration may look like [this](examples/zones.yaml) or this:
           ...
         occupancy:
           id: or_occupancy
+          name: "or_occupancy"
         target_count:
           id: or_target_count
+          name: "or_target_count"
 ```
 
 ### Polygon
