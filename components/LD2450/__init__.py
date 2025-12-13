@@ -20,6 +20,7 @@ from esphome.const import (
     CONF_STEP,
     CONF_UNIT_OF_MEASUREMENT,
     CONF_UPDATE_INTERVAL,
+    CONF_INTERNAL,
     DEVICE_CLASS_DISTANCE,
     DEVICE_CLASS_OCCUPANCY,
     DEVICE_CLASS_RESTART,
@@ -249,6 +250,40 @@ def validate_polygon(config):
     return config
 
 
+def validate_names(config):
+    """Assert that sensors provide a name or inherited it from their parent zone."""
+
+    if occupancy_config := config.get(CONF_OCCUPANCY):
+        # By default ESPHome chooses the entity id as the name of the component or the config-provided name
+        # This is required to force uniqueness of names across a platform
+        # For occupancy/target_count sensors we want to inherit the zone name, hence a bit of finagling is required to
+        # set the 'correct' name
+        if CONF_NAME in occupancy_config and str(occupancy_config[CONF_NAME]) != str(
+            occupancy_config[CONF_ID]
+        ):
+            occupancy_config[CONF_NAME] = (
+                f"{config[CONF_NAME]} {occupancy_config[CONF_NAME]}"
+            )
+        else:
+            occupancy_config[CONF_NAME] = config[CONF_NAME]
+            # ESPHome assumes that sensors without a name cannot be "external" - i.e. they are always internal and the
+            # config option has no effect, even when forcing a name on the component like this.
+            occupancy_config[CONF_INTERNAL] = False
+
+    if target_count_config := config.get(CONF_TARGET_COUNT):
+        if CONF_NAME in target_count_config and str(
+            target_count_config[CONF_NAME]
+        ) != str(target_count_config[CONF_ID]):
+            target_count_config[CONF_NAME] = (
+                f"{config[CONF_NAME]} {target_count_config[CONF_NAME]}"
+            )
+        else:
+            target_count_config[CONF_NAME] = config[CONF_NAME]
+            target_count_config[CONF_INTERNAL] = False
+
+    return config
+
+
 def validate_min_max_angle(config):
     """Assert that the min and max tilt angles do not exceed each other."""
 
@@ -301,16 +336,13 @@ ZONE_SCHEMA = cv.Schema(
                 ),
                 cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
                     device_class=DEVICE_CLASS_OCCUPANCY,
-                ).extend(
-                    cv.Schema({cv.Optional(CONF_NAME, default=""): cv.string_strict})
-                ),
+                ).extend(cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})),
                 cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
                     accuracy_decimals=0,
-                ).extend(
-                    cv.Schema({cv.Optional(CONF_NAME, default=""): cv.string_strict})
-                ),
+                ).extend(cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})),
             },
             validate_polygon,
+            validate_names,
         )
     }
 )
@@ -655,11 +687,6 @@ def zone_to_code(config):
 
     # Add binary occupancy sensor if present
     if occupancy_config := config.get(CONF_OCCUPANCY):
-        occupancy_config[CONF_NAME] = (
-            f"{config[CONF_NAME]} {occupancy_config[CONF_NAME]}"
-            if occupancy_config.get(CONF_NAME, "") != ""
-            else config[CONF_NAME]
-        )
         occupancy_binary_sensor = yield binary_sensor.new_binary_sensor(
             occupancy_config
         )
@@ -667,11 +694,6 @@ def zone_to_code(config):
 
     # Add target count sensor sensor if present
     if target_count_config := config.get(CONF_TARGET_COUNT):
-        target_count_config[CONF_NAME] = (
-            f"{config[CONF_NAME]} {target_count_config[CONF_NAME]}"
-            if target_count_config.get(CONF_NAME, "") != ""
-            else config[CONF_NAME]
-        )
         target_count_sensor = yield sensor.new_sensor(target_count_config)
         cg.add(zone.set_target_count_sensor(target_count_sensor))
 

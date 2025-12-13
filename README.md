@@ -214,3 +214,7 @@ If this is the case try the following steps:
 - increase `rx_buffer_size`
 - use a minimal ESPHome yaml configuration for troubleshooting
 - use a reliable `5V` power source for the sensor
+
+## Known limitations
+
+The `internal` property has no effect on zone/target-count configs if they don't provide a name. For these entities, `internal` will be `True`. To change this value, a name must added to the respective sensors.
