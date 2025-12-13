@@ -72,14 +72,16 @@ namespace esphome::ld2450
     class BluetoothSwitch;
     class BaudRateSelect;
 
+#ifdef USE_BUTTON
     /**
      * @brief Empty button definition used as a template for the restart and factory reset buttons.
      */
     class EmptyButton : public button::Button
     {
     protected:
-        virtual void press_action(){};
+        virtual void press_action() {};
     };
+#endif
 
     /**
      * @brief UART component responsible for processing the data stream provided by the HLK-LD2450 sensor
