@@ -79,7 +79,7 @@ namespace esphome::ld2450
     class EmptyButton : public button::Button
     {
     protected:
-        virtual void press_action() {};
+        virtual void press_action(){};
     };
 #endif
 
