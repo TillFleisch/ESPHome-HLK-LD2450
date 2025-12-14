@@ -158,40 +158,24 @@ TARGET_SCHEMA = cv.Schema(
                 cv.Optional(CONF_NAME): cv.string_strict,
                 cv.Optional(CONF_DEBUG, default=False): cv.boolean,
                 cv.Optional(CONF_X_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="X Position"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_Y_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Y Position"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Speed"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(
                     CONF_DISTANCE_RESOLUTION_SENSOR
                 ): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {
-                            cv.Optional(
-                                CONF_NAME, default="Distance Resolution"
-                            ): cv.string_strict
-                        }
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_ANGLE_SENSOR): DEGREE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Angle"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_DISTANCE_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Distance"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
             }
         ),
@@ -280,6 +264,47 @@ def validate_names(config):
         else:
             target_count_config[CONF_NAME] = config[CONF_NAME]
             target_count_config[CONF_INTERNAL] = False
+
+    return config
+
+
+def validate_target_names(config):
+    """
+    Validate and set target (and target related sensor) names.
+
+    By default target names will be incrementally called 'Target n'.
+    Sensors related to a target will be names 'Target n SENOR_NAME'. As this way of setting names does not convince ESP-
+    HOME to set the sensors as 'external' this is done here explicitly. (ESPHome assumes that sensors without a name
+    are internal, the order of validation is causing issues here.)
+    See ZONE occupancy/target count naming and internal status handling for reasoning/explanation
+    """
+    if target_configs := config.get(CONF_TARGETS):
+        for target_index, target_config in enumerate(target_configs):
+            target_config_content = target_config[CONF_TARGET]
+            if CONF_NAME not in target_config_content:
+                target_config_content[CONF_NAME] = f"Target {target_index + 1}"
+
+            for sensor, name_suffix in [
+                (CONF_X_SENSOR, "X Position"),
+                (CONF_Y_SENSOR, "Y Position"),
+                (CONF_SPEED_SENSOR, "Speed"),
+                (CONF_DISTANCE_RESOLUTION_SENSOR, "Distance Resolution"),
+                (CONF_ANGLE_SENSOR, "Angle"),
+                (CONF_DISTANCE_SENSOR, "Distance"),
+            ]:
+                if sensor_config := target_config_content.get(sensor):
+                    # Add Target name as prefix to sensor name
+                    if CONF_NAME in sensor_config and str(
+                        sensor_config[CONF_NAME]
+                    ) != str(sensor_config[CONF_ID]):
+                        sensor_config[CONF_NAME] = (
+                            f"{target_config_content[CONF_NAME]} {sensor_config[CONF_NAME]}"
+                        )
+                    else:
+                        sensor_config[CONF_NAME] = (
+                            f"{target_config_content[CONF_NAME]} {name_suffix}"
+                        )
+                        sensor_config[CONF_INTERNAL] = False
 
     return config
 
@@ -468,6 +493,7 @@ CONFIG_SCHEMA = cv.All(
             ),
         }
     ),
+    validate_target_names,
     validate_min_max_angle,
 )
 
@@ -613,8 +639,6 @@ def target_to_code(config, user_index: int):
     yield cg.register_component(target, config)
 
     # Generate name if not provided
-    if CONF_NAME not in config:
-        config[CONF_NAME] = f"Target {user_index + 1}"
     cg.add(target.set_name(config[CONF_NAME]))
     cg.add(target.set_debugging(config[CONF_DEBUG]))
 
@@ -627,12 +651,6 @@ def target_to_code(config, user_index: int):
         CONF_DISTANCE_SENSOR,
     ]:
         if sensor_config := config.get(SENSOR):
-            # Add Target name as prefix to sensor name
-            sensor_config[CONF_NAME] = (
-                f"{config[CONF_NAME]} {sensor_config[CONF_NAME]}"
-                if CONF_NAME in sensor_config
-                else config[CONF_NAME]
-            )
 
             sensor_var = cg.new_Pvariable(sensor_config[CONF_ID])
             yield cg.register_component(sensor_var, sensor_config)
