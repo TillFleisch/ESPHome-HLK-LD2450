@@ -198,7 +198,7 @@ namespace esphome::ld2450
 
         TEMPLATABLE_VALUE(std::vector<Point>, polygon)
 
-        void play(Ts... x) override
+        void play(const Ts &...x) override
         {
             std::vector<Point> polygon = this->polygon_.value(x...);
             this->parent_->update_polygon(polygon);

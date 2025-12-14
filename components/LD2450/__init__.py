@@ -14,6 +14,7 @@ from esphome.components.uart import UARTComponent
 from esphome.const import (
     CONF_ID,
     CONF_INITIAL_VALUE,
+    CONF_INTERNAL,
     CONF_LAMBDA,
     CONF_NAME,
     CONF_RESTORE_VALUE,
@@ -157,40 +158,24 @@ TARGET_SCHEMA = cv.Schema(
                 cv.Optional(CONF_NAME): cv.string_strict,
                 cv.Optional(CONF_DEBUG, default=False): cv.boolean,
                 cv.Optional(CONF_X_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="X Position"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_Y_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Y Position"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_SPEED_SENSOR): SPEED_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Speed"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(
                     CONF_DISTANCE_RESOLUTION_SENSOR
                 ): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {
-                            cv.Optional(
-                                CONF_NAME, default="Distance Resolution"
-                            ): cv.string_strict
-                        }
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_ANGLE_SENSOR): DEGREE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Angle"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
                 cv.Optional(CONF_DISTANCE_SENSOR): DISTANCE_SENSOR_SCHEMA.extend(
-                    cv.Schema(
-                        {cv.Optional(CONF_NAME, default="Distance"): cv.string_strict}
-                    )
+                    cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})
                 ),
             }
         ),
@@ -249,6 +234,81 @@ def validate_polygon(config):
     return config
 
 
+def validate_names(config):
+    """Assert that sensors provide a name or inherited it from their parent zone."""
+
+    if occupancy_config := config.get(CONF_OCCUPANCY):
+        # By default ESPHome chooses the entity id as the name of the component or the config-provided name
+        # This is required to force uniqueness of names across a platform
+        # For occupancy/target_count sensors we want to inherit the zone name, hence a bit of finagling is required to
+        # set the 'correct' name
+        if CONF_NAME in occupancy_config and str(occupancy_config[CONF_NAME]) != str(
+            occupancy_config[CONF_ID]
+        ):
+            occupancy_config[CONF_NAME] = (
+                f"{config[CONF_NAME]} {occupancy_config[CONF_NAME]}"
+            )
+        else:
+            occupancy_config[CONF_NAME] = config[CONF_NAME]
+            # ESPHome assumes that sensors without a name cannot be "external" - i.e. they are always internal and the
+            # config option has no effect, even when forcing a name on the component like this.
+            occupancy_config[CONF_INTERNAL] = False
+
+    if target_count_config := config.get(CONF_TARGET_COUNT):
+        if CONF_NAME in target_count_config and str(
+            target_count_config[CONF_NAME]
+        ) != str(target_count_config[CONF_ID]):
+            target_count_config[CONF_NAME] = (
+                f"{config[CONF_NAME]} {target_count_config[CONF_NAME]}"
+            )
+        else:
+            target_count_config[CONF_NAME] = config[CONF_NAME]
+            target_count_config[CONF_INTERNAL] = False
+
+    return config
+
+
+def validate_target_names(config):
+    """
+    Validate and set target (and target related sensor) names.
+
+    By default target names will be incrementally called 'Target n'.
+    Sensors related to a target will be names 'Target n SENOR_NAME'. As this way of setting names does not convince ESP-
+    HOME to set the sensors as 'external' this is done here explicitly. (ESPHome assumes that sensors without a name
+    are internal, the order of validation is causing issues here.)
+    See ZONE occupancy/target count naming and internal status handling for reasoning/explanation
+    """
+    if target_configs := config.get(CONF_TARGETS):
+        for target_index, target_config in enumerate(target_configs):
+            target_config_content = target_config[CONF_TARGET]
+            if CONF_NAME not in target_config_content:
+                target_config_content[CONF_NAME] = f"Target {target_index + 1}"
+
+            for sensor, name_suffix in [
+                (CONF_X_SENSOR, "X Position"),
+                (CONF_Y_SENSOR, "Y Position"),
+                (CONF_SPEED_SENSOR, "Speed"),
+                (CONF_DISTANCE_RESOLUTION_SENSOR, "Distance Resolution"),
+                (CONF_ANGLE_SENSOR, "Angle"),
+                (CONF_DISTANCE_SENSOR, "Distance"),
+            ]:
+                if sensor_config := target_config_content.get(sensor):
+                    # Add Target name as prefix to sensor name
+                    if CONF_NAME in sensor_config and str(
+                        sensor_config[CONF_NAME]
+                    ) != str(sensor_config[CONF_ID]):
+                        sensor_config[CONF_NAME] = (
+                            f"{target_config_content[CONF_NAME]} {sensor_config[CONF_NAME]}"
+                        )
+                    else:
+                        sensor_config[CONF_NAME] = (
+                            f"{target_config_content[CONF_NAME]} {name_suffix}"
+                        )
+                        sensor_config[CONF_INTERNAL] = False
+
+    return config
+
+
 def validate_min_max_angle(config):
     """Assert that the min and max tilt angles do not exceed each other."""
 
@@ -301,16 +361,13 @@ ZONE_SCHEMA = cv.Schema(
                 ),
                 cv.Optional(CONF_OCCUPANCY): binary_sensor.binary_sensor_schema(
                     device_class=DEVICE_CLASS_OCCUPANCY,
-                ).extend(
-                    cv.Schema({cv.Optional(CONF_NAME, default=""): cv.string_strict})
-                ),
+                ).extend(cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})),
                 cv.Optional(CONF_TARGET_COUNT): sensor.sensor_schema(
                     accuracy_decimals=0,
-                ).extend(
-                    cv.Schema({cv.Optional(CONF_NAME, default=""): cv.string_strict})
-                ),
+                ).extend(cv.Schema({cv.Optional(CONF_NAME): cv.string_strict})),
             },
             validate_polygon,
+            validate_names,
         )
     }
 )
@@ -369,7 +426,8 @@ CONFIG_SCHEMA = cv.All(
             ),
             cv.Optional(CONF_MAX_DISTANCE): cv.Any(
                 cv.All(cv.distance, cv.Range(min=0.0, max=6.0)),
-                number.NUMBER_SCHEMA.extend(
+                number.number_schema(class_=MaxDistanceNumber)
+                .extend(
                     {
                         cv.GenerateID(): cv.declare_id(MaxDistanceNumber),
                         cv.Required(CONF_NAME): cv.string_strict,
@@ -384,11 +442,13 @@ CONFIG_SCHEMA = cv.All(
                             CONF_UNIT_OF_MEASUREMENT, default=UNIT_METER
                         ): cv.one_of(UNIT_METER, lower="true"),
                     }
-                ).extend(cv.COMPONENT_SCHEMA),
+                )
+                .extend(cv.COMPONENT_SCHEMA),
             ),
             cv.Optional(CONF_MAX_TILT_ANGLE): cv.Any(
                 cv.All(cv.angle, cv.Range(min=-90.0, max=90.0)),
-                number.NUMBER_SCHEMA.extend(
+                number.number_schema(class_=MaxTiltAngleNumber)
+                .extend(
                     {
                         cv.GenerateID(): cv.declare_id(MaxTiltAngleNumber),
                         cv.Required(CONF_NAME): cv.string_strict,
@@ -405,11 +465,13 @@ CONFIG_SCHEMA = cv.All(
                             CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES
                         ): cv.one_of(UNIT_DEGREES, lower="true"),
                     }
-                ).extend(cv.COMPONENT_SCHEMA),
+                )
+                .extend(cv.COMPONENT_SCHEMA),
             ),
             cv.Optional(CONF_MIN_TILT_ANGLE): cv.Any(
                 cv.All(cv.angle, cv.Range(min=-90.0, max=90.0)),
-                number.NUMBER_SCHEMA.extend(
+                number.number_schema(class_=MinTiltAngleNumber)
+                .extend(
                     {
                         cv.GenerateID(): cv.declare_id(MinTiltAngleNumber),
                         cv.Required(CONF_NAME): cv.string_strict,
@@ -426,10 +488,12 @@ CONFIG_SCHEMA = cv.All(
                             CONF_UNIT_OF_MEASUREMENT, default=UNIT_DEGREES
                         ): cv.one_of(UNIT_DEGREES, lower="true"),
                     }
-                ).extend(cv.COMPONENT_SCHEMA),
+                )
+                .extend(cv.COMPONENT_SCHEMA),
             ),
         }
     ),
+    validate_target_names,
     validate_min_max_angle,
 )
 
@@ -575,8 +639,6 @@ def target_to_code(config, user_index: int):
     yield cg.register_component(target, config)
 
     # Generate name if not provided
-    if CONF_NAME not in config:
-        config[CONF_NAME] = f"Target {user_index + 1}"
     cg.add(target.set_name(config[CONF_NAME]))
     cg.add(target.set_debugging(config[CONF_DEBUG]))
 
@@ -589,12 +651,6 @@ def target_to_code(config, user_index: int):
         CONF_DISTANCE_SENSOR,
     ]:
         if sensor_config := config.get(SENSOR):
-            # Add Target name as prefix to sensor name
-            sensor_config[CONF_NAME] = (
-                f"{config[CONF_NAME]} {sensor_config[CONF_NAME]}"
-                if CONF_NAME in sensor_config
-                else config[CONF_NAME]
-            )
 
             sensor_var = cg.new_Pvariable(sensor_config[CONF_ID])
             yield cg.register_component(sensor_var, sensor_config)
@@ -649,11 +705,6 @@ def zone_to_code(config):
 
     # Add binary occupancy sensor if present
     if occupancy_config := config.get(CONF_OCCUPANCY):
-        occupancy_config[CONF_NAME] = (
-            f"{config[CONF_NAME]} {occupancy_config[CONF_NAME]}"
-            if occupancy_config.get(CONF_NAME, "") != ""
-            else config[CONF_NAME]
-        )
         occupancy_binary_sensor = yield binary_sensor.new_binary_sensor(
             occupancy_config
         )
@@ -661,11 +712,6 @@ def zone_to_code(config):
 
     # Add target count sensor sensor if present
     if target_count_config := config.get(CONF_TARGET_COUNT):
-        target_count_config[CONF_NAME] = (
-            f"{config[CONF_NAME]} {target_count_config[CONF_NAME]}"
-            if target_count_config.get(CONF_NAME, "") != ""
-            else config[CONF_NAME]
-        )
         target_count_sensor = yield sensor.new_sensor(target_count_config)
         cg.add(zone.set_target_count_sensor(target_count_sensor))
 
